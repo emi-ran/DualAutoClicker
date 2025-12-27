@@ -3,11 +3,15 @@ using DualAutoClicker.Native;
 using DualAutoClicker.Services;
 using DualAutoClicker.Forms;
 using System.Drawing.Drawing2D;
+using System.Runtime.InteropServices;
 
 namespace DualAutoClicker;
 
 public partial class MainForm : Form
 {
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern bool DestroyIcon(IntPtr hIcon);
+
     private readonly SettingsService _settingsService;
     private readonly ClickerService _clickerService;
     private readonly NotifyIcon _trayIcon;
@@ -116,12 +120,12 @@ public partial class MainForm : Form
         {
             Icon = this.Icon ?? _inactiveIcon,
             Text = "Dual AutoClicker",
-            Visible = false
+            Visible = true // Uygulama açıldığı gibi görünsün
         };
-        tray.DoubleClick += (s, e) => { Show(); WindowState = FormWindowState.Normal; tray.Visible = false; };
+        tray.DoubleClick += (s, e) => { Show(); WindowState = FormWindowState.Normal; };
 
         var menu = new ContextMenuStrip();
-        menu.Items.Add("Göster", null, (s, e) => { Show(); WindowState = FormWindowState.Normal; tray.Visible = false; });
+        menu.Items.Add("Göster", null, (s, e) => { Show(); WindowState = FormWindowState.Normal; });
         menu.Items.Add("-");
         menu.Items.Add("Çıkış", null, (s, e) => Application.Exit());
         tray.ContextMenuStrip = menu;
@@ -131,12 +135,16 @@ public partial class MainForm : Form
 
     private Icon CreateStatusIcon(Color color)
     {
-        var bmp = new Bitmap(16, 16);
+        var bmp = new Bitmap(32, 32); // Daha net olması için 32x32
         using var g = Graphics.FromImage(bmp);
         g.SmoothingMode = SmoothingMode.AntiAlias;
         using var brush = new SolidBrush(color);
-        g.FillEllipse(brush, 2, 2, 12, 12);
-        return Icon.FromHandle(bmp.GetHicon());
+        g.FillEllipse(brush, 4, 4, 24, 24);
+
+        IntPtr hIcon = bmp.GetHicon();
+        Icon icon = (Icon)Icon.FromHandle(hIcon).Clone(); // Clone alıp handle'ı serbest bırakacağız
+        DestroyIcon(hIcon);
+        return icon;
     }
 
     private void OnClickingStateChanged(bool isClicking)
@@ -660,7 +668,6 @@ public partial class MainForm : Form
         if (WindowState == FormWindowState.Minimized)
         {
             Hide();
-            _trayIcon.Visible = true;
         }
     }
 
