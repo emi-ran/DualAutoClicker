@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace DualAutoClicker.Native;
@@ -40,6 +41,14 @@ public static class InputSimulator
     [DllImport("user32.dll")]
     private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
 
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    private static extern int GetWindowText(IntPtr hWnd, System.Text.StringBuilder lpString, int nMaxCount);
+
+    // Static fields for window targeting
+    public static bool WindowTargetEnabled { get; set; }
+    public static string TargetProcessName { get; set; } = "";
+    public static string TargetWindowTitle { get; set; } = "";
+
     /// <summary>
     /// Check if our application window is in foreground
     /// </summary>
@@ -51,12 +60,56 @@ public static class InputSimulator
     }
 
     /// <summary>
+    /// Check if the target window is in foreground (when window targeting is enabled)
+    /// </summary>
+    public static bool IsTargetWindowInForeground()
+    {
+        if (!WindowTargetEnabled) return true;
+
+        var foregroundWindow = GetForegroundWindow();
+
+        // Check by process name
+        if (!string.IsNullOrEmpty(TargetProcessName))
+        {
+            GetWindowThreadProcessId(foregroundWindow, out uint processId);
+            try
+            {
+                var process = Process.GetProcessById((int)processId);
+                if (!process.ProcessName.Equals(TargetProcessName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        // Check by window title
+        if (!string.IsNullOrEmpty(TargetWindowTitle))
+        {
+            var sb = new System.Text.StringBuilder(256);
+            GetWindowText(foregroundWindow, sb, sb.Capacity);
+            if (!sb.ToString().Contains(TargetWindowTitle, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
     /// Simulate a left mouse click (down + up)
     /// </summary>
     public static void LeftClick()
     {
         // Don't click if our app is in foreground
         if (IsOurAppInForeground()) return;
+
+        // Don't click if target window is not in foreground
+        if (!IsTargetWindowInForeground()) return;
 
         var inputs = new INPUT[2];
 
@@ -78,6 +131,9 @@ public static class InputSimulator
     {
         // Don't click if our app is in foreground
         if (IsOurAppInForeground()) return;
+
+        // Don't click if target window is not in foreground
+        if (!IsTargetWindowInForeground()) return;
 
         var inputs = new INPUT[2];
 

@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 namespace DualAutoClicker.Native;
 
 /// <summary>
-/// High-precision clicker using spin-wait for accurate CPS
+/// High-precision clicker using spin-wait for accurate CPS with optional randomization
 /// </summary>
 public class PrecisionClicker : IDisposable
 {
@@ -16,8 +16,10 @@ public class PrecisionClicker : IDisposable
 
     private Thread? _thread;
     private volatile bool _running;
-    private volatile int _intervalMicroseconds;
+    private volatile int _baseCps;
+    private volatile int _randomPercent;
     private readonly Action _clickAction;
+    private readonly Random _random = new();
     private bool _disposed;
     private static bool _periodSet;
 
@@ -44,12 +46,12 @@ public class PrecisionClicker : IDisposable
         }
     }
 
-    public void Start(int cps)
+    public void Start(int cps, int randomPercent = 0)
     {
         if (_running) return;
 
-        // Calculate interval in microseconds for better precision
-        _intervalMicroseconds = (int)(1_000_000.0 / cps);
+        _baseCps = cps;
+        _randomPercent = randomPercent;
         _running = true;
 
         _thread = new Thread(ClickLoop)
@@ -80,12 +82,23 @@ public class PrecisionClicker : IDisposable
             if (elapsedMicroseconds >= nextClickTime)
             {
                 _clickAction();
-                nextClickTime += _intervalMicroseconds;
+
+                // Calculate next interval with optional randomization
+                int effectiveCps = _baseCps;
+                if (_randomPercent > 0)
+                {
+                    double variance = _baseCps * _randomPercent / 100.0;
+                    effectiveCps = (int)(_baseCps + (_random.NextDouble() * 2 - 1) * variance);
+                    effectiveCps = Math.Max(1, effectiveCps);
+                }
+
+                int intervalMicroseconds = (int)(1_000_000.0 / effectiveCps);
+                nextClickTime += intervalMicroseconds;
 
                 // Prevent drift accumulation
                 if (nextClickTime < elapsedMicroseconds)
                 {
-                    nextClickTime = elapsedMicroseconds + _intervalMicroseconds;
+                    nextClickTime = elapsedMicroseconds + intervalMicroseconds;
                 }
             }
             else

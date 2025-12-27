@@ -103,6 +103,7 @@ public class KeyboardHook : IDisposable
     {
         return vkCode switch
         {
+            // Function keys
             0x70 => "F1",
             0x71 => "F2",
             0x72 => "F3",
@@ -115,28 +116,59 @@ public class KeyboardHook : IDisposable
             0x79 => "F10",
             0x7A => "F11",
             0x7B => "F12",
+
+            // Modifier keys
+            0x10 => "SHIFT",
+            0xA0 => "LSHIFT",
+            0xA1 => "RSHIFT",
+            0x11 => "CTRL",
+            0xA2 => "LCTRL",
+            0xA3 => "RCTRL",
+            0x12 => "ALT",
+            0xA4 => "LALT",
+            0xA5 => "RALT",
+            0x5B => "LWIN",
+            0x5C => "RWIN",
+
+            // Special keys
             0x1B => "ESC",
             0x09 => "TAB",
             0x14 => "CAPS",
-            0x10 => "SHIFT",
-            0x11 => "CTRL",
-            0x12 => "ALT",
             0x20 => "SPACE",
             0x0D => "ENTER",
-            0x08 => "BACKSPACE",
-            0x2D => "INSERT",
-            0x2E => "DELETE",
+            0x08 => "BACK",
+            0x2D => "INS",
+            0x2E => "DEL",
             0x24 => "HOME",
             0x23 => "END",
             0x21 => "PGUP",
             0x22 => "PGDN",
-            0x25 => "LEFT",
-            0x26 => "UP",
-            0x27 => "RIGHT",
-            0x28 => "DOWN",
-            >= 0x30 and <= 0x39 => ((char)vkCode).ToString(), // 0-9
-            >= 0x41 and <= 0x5A => ((char)vkCode).ToString(), // A-Z
-            >= 0x60 and <= 0x69 => $"NUM{vkCode - 0x60}",     // Numpad 0-9
+            0x90 => "NUMLOCK",
+            0x91 => "SCRLOCK",
+            0x13 => "PAUSE",
+            0x2C => "PRTSC",
+
+            // Arrow keys
+            0x25 => "←",
+            0x26 => "↑",
+            0x27 => "→",
+            0x28 => "↓",
+
+            // Numbers
+            >= 0x30 and <= 0x39 => ((char)vkCode).ToString(),
+
+            // Letters
+            >= 0x41 and <= 0x5A => ((char)vkCode).ToString(),
+
+            // Numpad
+            >= 0x60 and <= 0x69 => $"NUM{vkCode - 0x60}",
+            0x6A => "NUM*",
+            0x6B => "NUM+",
+            0x6D => "NUM-",
+            0x6E => "NUM.",
+            0x6F => "NUM/",
+
+            // Punctuation
             0xC0 => "`",
             0xBD => "-",
             0xBB => "=",
@@ -148,7 +180,8 @@ public class KeyboardHook : IDisposable
             0xBC => ",",
             0xBE => ".",
             0xBF => "/",
-            _ => $"KEY_{vkCode}"
+
+            _ => $"VK{vkCode}"
         };
     }
 

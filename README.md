@@ -1,6 +1,6 @@
 # 🖱️ Dual AutoClicker
 
-Bağımsız sol ve sağ tık ayarlarına sahip, yüksek performanslı Windows autoclicker uygulaması.
+Bağımsız sol ve sağ tık ayarlarına sahip, yüksek performanslı ve modern tasarımlı Windows autoclicker uygulaması.
 
 ![Platform](https://img.shields.io/badge/Platform-Windows-blue)
 ![.NET](https://img.shields.io/badge/.NET-8.0-purple)
@@ -8,69 +8,52 @@ Bağımsız sol ve sağ tık ayarlarına sahip, yüksek performanslı Windows au
 
 ## ✨ Özellikler
 
-- **🎯 Çift Tıklama Desteği** - Sol ve sağ tık için bağımsız ayarlar
-- **⌨️ Esnek Tuş Atama** - Mouse butonları (MB3, MB4, MB5) veya klavye tuşları
-- **🎚️ Ayarlanabilir CPS** - 1-100 tık/saniye arasında hassas kontrol
-- **🔄 İki Mod** - Basılı tut veya Toggle
-- **💾 Ayar Kaydetme** - Ayarlar otomatik olarak kaydedilir
-- **📌 Sistem Tepsisi** - Küçültüldüğünde tepsiye gider
+- **Modern UI** - Göz yormayan karanlık tema ve şık tasarım.
+- **🎯 Çift Tıklama Desteği** - Sol ve sağ tık için tamamen bağımsız konfigürasyon.
+- **⌨️ Esnek Tuş Atama** - Mouse butonları (MB3, MB4, MB5) veya klavye tuşları ile tam uyum.
+- **🎚️ Hassas CPS Kontrolü** - 1-100 CPS arasında mikrosaniye düzeyinde doğruluk.
+- **🎲 Rastgelelik (Rnd)** - Anti-cheat sistemlerini atlatmak için tık aralıklarına %0-30 arası varyasyon ekler.
+- **⏸️ Master Kontrol** - Tek bir tuşla (örn: F8) tüm sistemi anında donduran acil durum anahtarı.
+- **🪟 Uygulama Hedefleme** - Tıklayıcının sadece seçtiğiniz uygulama penceresinde çalışmasını sağlar.
+- **🚀 Windows Başlangıcı** - Windows açıldığında otomatik olarak arka planda başlar.
+- **📌 Akıllı Tray Sistemi** - Küçültüldüğünde tepsisinde çalışır, ikonu makro durumuna göre renk değiştirir (Yeşil: Aktif, Mavi: Beklemede, Gri: Kapalı).
 
 ## 📥 Kurulum
 
 ### Gereksinimler
 
-- Windows 10/11
+- Windows 10 veya 11
 - [.NET 8.0 Runtime](https://dotnet.microsoft.com/download/dotnet/8.0)
 
-### İndirme
+### Hızlı Başlat
 
-1. [Releases](../../releases) sayfasından son sürümü indir
-2. `DualAutoClicker.exe` dosyasını çalıştır
-
-### Kaynak Koddan Derleme
-
-```bash
-git clone https://github.com/kullanici/DualAutoClicker.git
-cd DualAutoClicker
-dotnet publish -c Release -r win-x64 -o ./publish
-```
+1. [Releases](../../releases) sayfasından son güncel `exe` dosyasını indir.
+2. Uygulamayı çalıştır. Ayarlarınız her seferinde otomatik olarak kaydedilir.
 
 ## 🎮 Kullanım
 
-1. Uygulamayı başlat
-2. Sol/Sağ tık panellerinden:
-   - **Aktif** - Tıklayıcıyı aç/kapat
-   - **Seç** - Aktivasyon tuşunu belirle
-   - **Mod** - Basılı tut veya Toggle seç
-   - **CPS** - Saniyedeki tıklama sayısını ayarla
-3. Aktivasyon tuşuna bas ve tıklamaya başla!
+1. **Makro Ayarları**:
 
-### Tuş Atama
+   - **SOL/SAĞ TIK**: İstediğiniz tarafı etkinleştirin.
+   - **SEÇ**: Aktivasyon tuşunu belirleyin (Klavye veya Mouse).
+   - **MOD**: Makronun basılı tutunca mı yoksa tıkla-başlat tıkla-durdur (Toggle) şeklinde mi çalışacağını seçin.
+   - **CPS & RND**: Tıklama hızını ve rastgelelik oranını belirleyin.
 
-- **Seç** butonuna tıkla
-- İstediğin tuşa veya mouse butonuna bas
-- **ESC** ile iptal et
+2. **Gelişmiş Ayarlar**:
 
-## ⚙️ Ayarlar
+   - **MASTER KONTROL**: Tüm makroları anında devre dışı bırakmak için bir global kısayol atayın.
+   - **UYGULAMA HEDEFLE**: "PENCERE SEÇ" butonu ile makronun sadece o oyunda/programda çalışmasını sağlayın.
 
-Ayarlar otomatik olarak şu konumda saklanır:
+3. **Sistem Tepsisi**:
+   - Uygulama küçültüldüğünde saatin yanına gider.
+   - İkon Rengi **Yeşil** ise makro o an tıklama yapıyordur.
+   - İkon Rengi **Mavi** ise makro hazır ama tıklama yapılmıyordur.
 
-```
-%LOCALAPPDATA%\DualAutoClicker\settings.json
-```
+## 🛠️ Teknik Detaylar
 
-## 🛠️ Geliştirme
-
-```bash
-# Geliştirme modunda çalıştır
-dotnet run
-
-# Release build
-dotnet build -c Release
-
-# Tek dosya olarak yayınla
-dotnet publish -c Release -r win-x64 -o ./publish
-```
+- **Hassasiyet**: `Stopwatch` ve `PrecisionClicker` motoru ile standart Windows timer limitlerini aşan hassasiyet.
+- **Sistem Kaynakları**: Minimum CPU ve RAM kullanımı için optimize edilmiştir.
+- **Yayınlama**: Framework-dependent single-file olarak yayınlanmış, taşınabilir ve hafiftir.
 
 ## 📄 Lisans
 
@@ -78,4 +61,4 @@ Bu proje [MIT Lisansı](LICENSE) altında lisanslanmıştır.
 
 ## ⚠️ Sorumluluk Reddi
 
-Bu yazılım eğitim amaçlıdır. Oyunlarda veya diğer uygulamalarda haksız avantaj sağlamak amacıyla kullanılması kullanıcının sorumluluğundadır.
+Bu yazılım açık kaynak ve eğitim amaçlı bir projedir. Oyunlarda veya diğer platformlarda kullanımından doğabilecek kısıtlamalar veya sorunlardan kullanıcı sorumludur.

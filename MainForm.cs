@@ -1,6 +1,8 @@
 using DualAutoClicker.Models;
 using DualAutoClicker.Native;
 using DualAutoClicker.Services;
+using DualAutoClicker.Forms;
+using System.Drawing.Drawing2D;
 
 namespace DualAutoClicker;
 
@@ -9,28 +11,53 @@ public partial class MainForm : Form
     private readonly SettingsService _settingsService;
     private readonly ClickerService _clickerService;
     private readonly NotifyIcon _trayIcon;
+    private readonly Icon _activeIcon;
+    private readonly Icon _inactiveIcon;
+    private readonly Icon _disabledIcon;
+    private readonly ToolTip _toolTip;
 
     // For key binding
     private readonly MouseHook _bindingMouseHook;
     private readonly KeyboardHook _bindingKeyboardHook;
     private Button? _currentBindingButton;
+    private Label? _currentBindingLabel;
     private Action<string, int, string>? _onKeyBound;
 
-    // Left click controls
+    // UI Controls - Left
     private CheckBox _leftEnabledCheckBox = null!;
     private Button _leftKeyButton = null!;
     private Label _leftKeyLabel = null!;
     private RadioButton _leftHoldRadio = null!;
     private RadioButton _leftToggleRadio = null!;
     private NumericUpDown _leftCpsNumeric = null!;
+    private NumericUpDown _leftRandomNumeric = null!;
 
-    // Right click controls
+    // UI Controls - Right
     private CheckBox _rightEnabledCheckBox = null!;
     private Button _rightKeyButton = null!;
     private Label _rightKeyLabel = null!;
     private RadioButton _rightHoldRadio = null!;
     private RadioButton _rightToggleRadio = null!;
     private NumericUpDown _rightCpsNumeric = null!;
+    private NumericUpDown _rightRandomNumeric = null!;
+
+    // UI Controls - Settings
+    private CheckBox _masterToggleCheckBox = null!;
+    private Button _masterKeyButton = null!;
+    private Label _masterKeyLabel = null!;
+    private Button _windowPickerButton = null!;
+    private Label _windowStatusLabel = null!;
+    private CheckBox _startupCheckBox = null!;
+
+    // Colors
+    private static readonly Color BgDark = Color.FromArgb(18, 18, 22);
+    private static readonly Color BgPanel = Color.FromArgb(28, 28, 35);
+    private static readonly Color BgInput = Color.FromArgb(38, 38, 45);
+    private static readonly Color AccentBlue = Color.FromArgb(0, 150, 255);
+    private static readonly Color AccentGreen = Color.FromArgb(0, 200, 120);
+    private static readonly Color AccentOrange = Color.FromArgb(255, 150, 50);
+    private static readonly Color TextPrimary = Color.FromArgb(240, 240, 245);
+    private static readonly Color TextSecondary = Color.FromArgb(150, 150, 160);
 
     public MainForm()
     {
@@ -39,239 +66,446 @@ public partial class MainForm : Form
 
         _clickerService = new ClickerService(_settingsService);
 
-        // Separate hooks for key binding (not for activation)
+        // Create status icons
+        _activeIcon = CreateStatusIcon(Color.LimeGreen);
+        _inactiveIcon = CreateStatusIcon(Color.DodgerBlue);
+        _disabledIcon = CreateStatusIcon(Color.Gray);
+
+        // Key binding hooks
         _bindingMouseHook = new MouseHook();
         _bindingKeyboardHook = new KeyboardHook();
         _bindingMouseHook.MouseButtonPressed += OnBindingMousePressed;
         _bindingKeyboardHook.KeyPressed += OnBindingKeyPressed;
 
+        // Clicker events
+        _clickerService.ClickingStateChanged += OnClickingStateChanged;
+        _clickerService.MasterStateChanged += OnMasterStateChanged;
+
+        _toolTip = new ToolTip
+        {
+            AutoPopDelay = 5000,
+            InitialDelay = 500,
+            ReshowDelay = 500,
+            ShowAlways = true
+        };
+
         InitializeComponent();
 
-        // Load custom icon
+        // Load icon
+        LoadApplicationIcon();
+
+        // Setup tray
+        _trayIcon = CreateTrayIcon();
+
+        LoadSettingsToUI();
+        _clickerService.Start();
+    }
+
+    private void LoadApplicationIcon()
+    {
         var iconPath = Path.Combine(AppContext.BaseDirectory, "Resources", "icon.ico");
-        Icon? customIcon = null;
         if (File.Exists(iconPath))
         {
-            customIcon = new Icon(iconPath);
-            this.Icon = customIcon;
+            this.Icon = new Icon(iconPath);
         }
+    }
 
-        // Setup tray icon
-        _trayIcon = new NotifyIcon
+    private NotifyIcon CreateTrayIcon()
+    {
+        var tray = new NotifyIcon
         {
-            Icon = customIcon ?? SystemIcons.Application,
+            Icon = this.Icon ?? _inactiveIcon,
             Text = "Dual AutoClicker",
             Visible = false
         };
-        _trayIcon.DoubleClick += TrayIcon_DoubleClick;
+        tray.DoubleClick += (s, e) => { Show(); WindowState = FormWindowState.Normal; tray.Visible = false; };
 
-        // Load settings into UI
-        LoadSettingsToUI();
+        var menu = new ContextMenuStrip();
+        menu.Items.Add("Göster", null, (s, e) => { Show(); WindowState = FormWindowState.Normal; tray.Visible = false; });
+        menu.Items.Add("-");
+        menu.Items.Add("Çıkış", null, (s, e) => Application.Exit());
+        tray.ContextMenuStrip = menu;
 
-        // Start clicker service
-        _clickerService.Start();
+        return tray;
+    }
+
+    private Icon CreateStatusIcon(Color color)
+    {
+        var bmp = new Bitmap(16, 16);
+        using var g = Graphics.FromImage(bmp);
+        g.SmoothingMode = SmoothingMode.AntiAlias;
+        using var brush = new SolidBrush(color);
+        g.FillEllipse(brush, 2, 2, 12, 12);
+        return Icon.FromHandle(bmp.GetHicon());
+    }
+
+    private void OnClickingStateChanged(bool isClicking)
+    {
+        BeginInvoke(() =>
+        {
+            if (_clickerService.MasterEnabled)
+            {
+                _trayIcon.Icon = isClicking ? _activeIcon : _inactiveIcon;
+                _trayIcon.Text = isClicking ? "Dual AutoClicker - Aktif" : "Dual AutoClicker";
+            }
+        });
+    }
+
+    private void OnMasterStateChanged(bool enabled)
+    {
+        BeginInvoke(() =>
+        {
+            _trayIcon.Icon = enabled ? _inactiveIcon : _disabledIcon;
+            _trayIcon.Text = enabled ? "Dual AutoClicker" : "Dual AutoClicker - Devre Dışı";
+        });
     }
 
     private void InitializeComponent()
     {
         this.SuspendLayout();
 
-        // Form settings
+        // Form
         this.Text = "Dual AutoClicker";
-        this.Size = new Size(520, 280);
-        this.MinimumSize = new Size(520, 280);
-        this.MaximumSize = new Size(520, 280);
+        this.Size = new Size(650, 480);
+        this.MinimumSize = new Size(650, 480);
         this.FormBorderStyle = FormBorderStyle.FixedSingle;
         this.MaximizeBox = false;
         this.StartPosition = FormStartPosition.CenterScreen;
-        this.BackColor = Color.FromArgb(30, 30, 30);
-        this.ForeColor = Color.White;
+        this.BackColor = BgDark;
+        this.ForeColor = TextPrimary;
+        this.Font = new Font("Segoe UI", 9.5f);
+        this.DoubleBuffered = true;
 
-        // Left Click Panel
-        var leftPanel = CreateClickPanel("SOL TIK", 10, 10, true);
+        // Title
+        var titleLabel = new Label
+        {
+            Text = "DUAL AUTOCLICKER",
+            Location = new Point(0, 12),
+            Size = new Size(650, 30),
+            Font = new Font("Segoe UI", 14, FontStyle.Bold),
+            ForeColor = TextPrimary,
+            TextAlign = ContentAlignment.MiddleCenter
+        };
+        this.Controls.Add(titleLabel);
+
+        // Panels
+        var leftPanel = CreateClickerPanel("SOL TIK", 15, 50, AccentBlue, true);
+        var rightPanel = CreateClickerPanel("SAĞ TIK", 305, 50, AccentGreen, false);
+        var settingsPanel = CreateSettingsPanel();
+
         this.Controls.Add(leftPanel);
-
-        // Right Click Panel
-        var rightPanel = CreateClickPanel("SAĞ TIK", 260, 10, false);
         this.Controls.Add(rightPanel);
+        this.Controls.Add(settingsPanel);
 
-        // Extract controls from panels
-        ExtractControlsFromPanel(leftPanel, out _leftEnabledCheckBox, out _leftKeyButton, out _leftKeyLabel,
-            out _leftHoldRadio, out _leftToggleRadio, out _leftCpsNumeric);
-        ExtractControlsFromPanel(rightPanel, out _rightEnabledCheckBox, out _rightKeyButton, out _rightKeyLabel,
-            out _rightHoldRadio, out _rightToggleRadio, out _rightCpsNumeric);
+        // Extract controls
+        ExtractPanelControls(leftPanel,
+            out _leftEnabledCheckBox, out _leftKeyButton, out _leftKeyLabel,
+            out _leftHoldRadio, out _leftToggleRadio, out _leftCpsNumeric, out _leftRandomNumeric);
 
-        // Wire up events
-        WireUpLeftClickEvents();
-        WireUpRightClickEvents();
+        ExtractPanelControls(rightPanel,
+            out _rightEnabledCheckBox, out _rightKeyButton, out _rightKeyLabel,
+            out _rightHoldRadio, out _rightToggleRadio, out _rightCpsNumeric, out _rightRandomNumeric);
+
+        // Wire events
+        WireLeftEvents();
+        WireRightEvents();
+        WireSettingsEvents();
 
         this.ResumeLayout(false);
     }
 
-    private GroupBox CreateClickPanel(string title, int x, int y, bool isLeft)
+    private Panel CreateClickerPanel(string title, int x, int y, Color accent, bool isLeft)
     {
-        var panel = new GroupBox
+        var panel = new Panel
+        {
+            Location = new Point(x, y),
+            Size = new Size(280, 195),
+            BackColor = BgPanel
+        };
+
+        // Add rounded corners effect with paint
+        panel.Paint += (s, e) =>
+        {
+            using var pen = new Pen(accent, 2);
+            e.Graphics.DrawLine(pen, 0, 0, panel.Width - 1, 0);
+        };
+
+        int yPos = 12;
+
+        // Title + Checkbox
+        var enabledCheck = new CheckBox
         {
             Text = title,
-            Location = new Point(x, y),
-            Size = new Size(240, 220),
-            ForeColor = Color.FromArgb(100, 180, 255),
-            Font = new Font("Segoe UI", 10, FontStyle.Bold)
-        };
-
-        int yOffset = 25;
-
-        // Enabled checkbox
-        var enabledCheckBox = new CheckBox
-        {
-            Text = "Aktif",
-            Location = new Point(15, yOffset),
-            Size = new Size(200, 25),
-            ForeColor = Color.White,
-            Font = new Font("Segoe UI", 9),
+            Location = new Point(15, yPos),
+            Size = new Size(250, 28),
+            Font = new Font("Segoe UI", 12, FontStyle.Bold),
+            ForeColor = accent,
             Tag = "enabled"
         };
-        panel.Controls.Add(enabledCheckBox);
-        yOffset += 30;
+        panel.Controls.Add(enabledCheck);
+        yPos += 38;
 
-        // Activation key label
-        var keyTitleLabel = new Label
+        // Activation row
+        var actLabel = new Label
         {
-            Text = "Aktivasyon:",
-            Location = new Point(15, yOffset + 5),
-            Size = new Size(75, 20),
-            ForeColor = Color.LightGray,
+            Text = "Aktivasyon",
+            Location = new Point(15, yPos + 4),
+            Size = new Size(80, 22),
+            ForeColor = TextSecondary,
             Font = new Font("Segoe UI", 9)
         };
-        panel.Controls.Add(keyTitleLabel);
+        panel.Controls.Add(actLabel);
 
-        // Key display label
         var keyLabel = new Label
         {
             Text = isLeft ? "MB4" : "MB5",
-            Location = new Point(90, yOffset + 5),
-            Size = new Size(60, 20),
-            ForeColor = Color.Cyan,
-            Font = new Font("Segoe UI", 9, FontStyle.Bold),
+            Location = new Point(100, yPos + 4),
+            Size = new Size(80, 22),
+            ForeColor = accent,
+            Font = new Font("Segoe UI", 10, FontStyle.Bold),
             Tag = "keylabel"
         };
         panel.Controls.Add(keyLabel);
 
-        // Select button
-        var keyButton = new Button
-        {
-            Text = "Seç",
-            Location = new Point(155, yOffset),
-            Size = new Size(65, 28),
-            BackColor = Color.FromArgb(60, 60, 60),
-            ForeColor = Color.White,
-            FlatStyle = FlatStyle.Flat,
-            Font = new Font("Segoe UI", 9),
-            Tag = "keybutton",
-            Cursor = Cursors.Hand
-        };
-        keyButton.FlatAppearance.BorderColor = Color.FromArgb(100, 100, 100);
-        panel.Controls.Add(keyButton);
-        yOffset += 38;
+        var keyBtn = CreateButton("SEÇ", 190, yPos, 75, 28, accent);
+        keyBtn.Tag = "keybtn";
+        panel.Controls.Add(keyBtn);
+        yPos += 38;
 
-        // Mode label
+        // Mode row
         var modeLabel = new Label
         {
-            Text = "Mod:",
-            Location = new Point(15, yOffset + 3),
-            Size = new Size(40, 20),
-            ForeColor = Color.LightGray,
+            Text = "Mod",
+            Location = new Point(15, yPos + 4),
+            Size = new Size(40, 22),
+            ForeColor = TextSecondary,
             Font = new Font("Segoe UI", 9)
         };
         panel.Controls.Add(modeLabel);
 
-        // Hold radio
         var holdRadio = new RadioButton
         {
-            Text = "Basılı tut",
-            Location = new Point(60, yOffset),
-            Size = new Size(85, 25),
-            ForeColor = Color.White,
+            Text = "Basılı Tut",
+            Location = new Point(60, yPos),
+            Size = new Size(95, 26),
+            ForeColor = TextPrimary,
             Font = new Font("Segoe UI", 9),
             Tag = "hold"
         };
         panel.Controls.Add(holdRadio);
 
-        // Toggle radio
         var toggleRadio = new RadioButton
         {
             Text = "Toggle",
-            Location = new Point(145, yOffset),
-            Size = new Size(80, 25),
-            ForeColor = Color.White,
+            Location = new Point(160, yPos),
+            Size = new Size(90, 26),
+            ForeColor = TextPrimary,
             Font = new Font("Segoe UI", 9),
             Tag = "toggle"
         };
         panel.Controls.Add(toggleRadio);
-        yOffset += 35;
+        yPos += 35;
 
-        // CPS label
+        // CPS row
         var cpsLabel = new Label
         {
-            Text = "CPS:",
-            Location = new Point(15, yOffset + 3),
-            Size = new Size(40, 20),
-            ForeColor = Color.LightGray,
+            Text = "CPS",
+            Location = new Point(15, yPos + 4),
+            Size = new Size(35, 22),
+            ForeColor = TextSecondary,
             Font = new Font("Segoe UI", 9)
         };
         panel.Controls.Add(cpsLabel);
 
-        // CPS numeric
-        var cpsNumeric = new NumericUpDown
-        {
-            Location = new Point(60, yOffset),
-            Size = new Size(80, 25),
-            Minimum = 1,
-            Maximum = 100,
-            Value = 16,
-            BackColor = Color.FromArgb(45, 45, 45),
-            ForeColor = Color.White,
-            Font = new Font("Segoe UI", 9),
-            Tag = "cps"
-        };
-        panel.Controls.Add(cpsNumeric);
+        var cpsNum = CreateNumeric(55, yPos, 60, 1, 100, isLeft ? 16 : 33);
+        cpsNum.Tag = "cps";
+        panel.Controls.Add(cpsNum);
 
-        // CPS hint
-        var cpsHint = new Label
+        var randLabel = new Label
         {
-            Text = "tık/sn",
-            Location = new Point(145, yOffset + 3),
-            Size = new Size(50, 20),
-            ForeColor = Color.Gray,
-            Font = new Font("Segoe UI", 8)
+            Text = "Rnd",
+            Location = new Point(125, yPos + 4),
+            AutoSize = true,
+            ForeColor = TextSecondary,
+            Font = new Font("Segoe UI", 9)
         };
-        panel.Controls.Add(cpsHint);
+        _toolTip.SetToolTip(randLabel, "Rastgele: CPS'e varyasyon ekleyerek daha doğal tıklama");
+        panel.Controls.Add(randLabel);
+
+        var randNum = CreateNumeric(160, yPos, 50, 0, 30, 0);
+        randNum.Tag = "random";
+        panel.Controls.Add(randNum);
+
+        var percentLabel = new Label
+        {
+            Text = "%",
+            Location = new Point(213, yPos + 4),
+            Size = new Size(20, 22),
+            ForeColor = TextSecondary,
+            Font = new Font("Segoe UI", 9)
+        };
+        panel.Controls.Add(percentLabel);
 
         return panel;
     }
 
-    private void ExtractControlsFromPanel(GroupBox panel,
-        out CheckBox enabledCheckBox, out Button keyButton, out Label keyLabel,
-        out RadioButton holdRadio, out RadioButton toggleRadio,
-        out NumericUpDown cpsNumeric)
+    private Panel CreateSettingsPanel()
     {
-        enabledCheckBox = panel.Controls.OfType<CheckBox>().First(c => c.Tag?.ToString() == "enabled");
-        keyButton = panel.Controls.OfType<Button>().First(c => c.Tag?.ToString() == "keybutton");
+        var panel = new Panel
+        {
+            Location = new Point(15, 255),
+            Size = new Size(605, 170),
+            BackColor = BgPanel
+        };
+
+        panel.Paint += (s, e) =>
+        {
+            using var pen = new Pen(AccentOrange, 2);
+            e.Graphics.DrawLine(pen, 0, 0, panel.Width - 1, 0);
+        };
+
+        // Title
+        var titleLabel = new Label
+        {
+            Text = "AYARLAR",
+            Location = new Point(15, 10),
+            Size = new Size(100, 25),
+            Font = new Font("Segoe UI", 11, FontStyle.Bold),
+            ForeColor = AccentOrange
+        };
+        panel.Controls.Add(titleLabel);
+
+        int yPos = 42;
+
+        // Master Switch Section (Row 1)
+        _masterToggleCheckBox = new CheckBox
+        {
+            Text = "Master Kontrol",
+            Location = new Point(15, yPos),
+            AutoSize = true,
+            ForeColor = TextPrimary,
+            Font = new Font("Segoe UI", 10, FontStyle.Bold)
+        };
+        _toolTip.SetToolTip(_masterToggleCheckBox, "Tüm makroları tek bir tuşla anında açıp kapatın (Acil Durum Anahtarı)");
+        panel.Controls.Add(_masterToggleCheckBox);
+
+        _masterKeyLabel = new Label
+        {
+            Text = "F8",
+            Location = new Point(170, yPos + 2),
+            Size = new Size(60, 22),
+            ForeColor = AccentOrange,
+            Font = new Font("Segoe UI", 10, FontStyle.Bold),
+            TextAlign = ContentAlignment.MiddleCenter,
+            BackColor = Color.Transparent
+        };
+        panel.Controls.Add(_masterKeyLabel);
+
+        _masterKeyButton = CreateButton("SEÇ", 240, yPos - 3, 55, 28, AccentOrange);
+        _toolTip.SetToolTip(_masterKeyButton, "Master kontrol tuşunu değiştirmek için tıklayın");
+        panel.Controls.Add(_masterKeyButton);
+
+        yPos += 45;
+
+        // Window Targeting Section (Row 2)
+        _windowPickerButton = CreateButton("UYGULAMA HEDEFLE", 15, yPos - 3, 140, 28, Color.FromArgb(80, 80, 90));
+        _toolTip.SetToolTip(_windowPickerButton, "Otomatik tıklayıcının sadece belirli bir uygulamada çalışmasını sağlar");
+        panel.Controls.Add(_windowPickerButton);
+
+        _windowStatusLabel = new Label
+        {
+            Text = "Tüm uygulamalar (Global)",
+            Location = new Point(165, yPos + 2),
+            AutoSize = true,
+            ForeColor = TextSecondary,
+            Font = new Font("Segoe UI", 9)
+        };
+        panel.Controls.Add(_windowStatusLabel);
+
+        yPos += 45;
+
+        // Startup & Info Section (Row 3)
+        _startupCheckBox = new CheckBox
+        {
+            Text = "Windows ile başlat",
+            Location = new Point(15, yPos),
+            AutoSize = true,
+            ForeColor = TextPrimary,
+            Font = new Font("Segoe UI", 9)
+        };
+        _toolTip.SetToolTip(_startupCheckBox, "Bilgisayar açıldığında uygulamayı otomatik olarak başlatır");
+        panel.Controls.Add(_startupCheckBox);
+
+        var infoLabel = new Label
+        {
+            Text = "💡 İpucu: Uygulama simge durumuna küçültüldüğünde \nsistem tepsisinde (saat yanı) çalışmaya devam eder.",
+            Location = new Point(180, yPos - 5),
+            AutoSize = true,
+            ForeColor = Color.FromArgb(100, 100, 100),
+            Font = new Font("Segoe UI", 8.5f)
+        };
+        panel.Controls.Add(infoLabel);
+
+        return panel;
+    }
+
+    private Button CreateButton(string text, int x, int y, int w, int h, Color accent)
+    {
+        var btn = new Button
+        {
+            Text = text,
+            Location = new Point(x, y),
+            Size = new Size(w, h),
+            BackColor = accent,
+            ForeColor = Color.White,
+            FlatStyle = FlatStyle.Flat,
+            Font = new Font("Segoe UI", 9, FontStyle.Bold),
+            Cursor = Cursors.Hand
+        };
+        btn.FlatAppearance.BorderSize = 0;
+        btn.FlatAppearance.MouseOverBackColor = ControlPaint.Light(accent, 0.2f);
+        return btn;
+    }
+
+    private NumericUpDown CreateNumeric(int x, int y, int w, int min, int max, int value)
+    {
+        return new NumericUpDown
+        {
+            Location = new Point(x, y),
+            Size = new Size(w, 28),
+            Minimum = min,
+            Maximum = max,
+            Value = value,
+            BackColor = BgInput,
+            ForeColor = TextPrimary,
+            Font = new Font("Segoe UI", 10),
+            BorderStyle = BorderStyle.FixedSingle
+        };
+    }
+
+    private void ExtractPanelControls(Panel panel,
+        out CheckBox enabled, out Button keyBtn, out Label keyLabel,
+        out RadioButton hold, out RadioButton toggle,
+        out NumericUpDown cps, out NumericUpDown random)
+    {
+        enabled = panel.Controls.OfType<CheckBox>().First(c => c.Tag?.ToString() == "enabled");
+        keyBtn = panel.Controls.OfType<Button>().First(c => c.Tag?.ToString() == "keybtn");
         keyLabel = panel.Controls.OfType<Label>().First(c => c.Tag?.ToString() == "keylabel");
-        holdRadio = panel.Controls.OfType<RadioButton>().First(c => c.Tag?.ToString() == "hold");
-        toggleRadio = panel.Controls.OfType<RadioButton>().First(c => c.Tag?.ToString() == "toggle");
-        cpsNumeric = panel.Controls.OfType<NumericUpDown>().First(c => c.Tag?.ToString() == "cps");
+        hold = panel.Controls.OfType<RadioButton>().First(c => c.Tag?.ToString() == "hold");
+        toggle = panel.Controls.OfType<RadioButton>().First(c => c.Tag?.ToString() == "toggle");
+        cps = panel.Controls.OfType<NumericUpDown>().First(c => c.Tag?.ToString() == "cps");
+        random = panel.Controls.OfType<NumericUpDown>().First(c => c.Tag?.ToString() == "random");
     }
 
     private void StartKeyBinding(Button button, Label label, Action<string, int, string> onBound)
     {
-        // Visual feedback
         _currentBindingButton = button;
+        _currentBindingLabel = label;
         _onKeyBound = onBound;
-        button.Text = "...";
-        button.BackColor = Color.FromArgb(80, 80, 0);
 
-        // Start listening
+        button.Text = "...";
+        button.BackColor = Color.FromArgb(120, 100, 0);
+
         _bindingMouseHook.Install();
         _bindingKeyboardHook.Install();
     }
@@ -283,130 +517,110 @@ public partial class MainForm : Form
 
         if (_currentBindingButton != null)
         {
-            _currentBindingButton.Text = "Seç";
-            _currentBindingButton.BackColor = Color.FromArgb(60, 60, 60);
+            _currentBindingButton.Text = "SEÇ";
+            _currentBindingButton.BackColor = AccentBlue;
         }
 
         _currentBindingButton = null;
+        _currentBindingLabel = null;
         _onKeyBound = null;
     }
 
-    private void OnBindingMousePressed(int buttonCode, string buttonName)
+    private void OnBindingMousePressed(int code, string name)
     {
         if (_onKeyBound == null) return;
-
-        this.BeginInvoke(() =>
-        {
-            _onKeyBound("mouse", buttonCode, buttonName);
-            StopKeyBinding();
-        });
+        BeginInvoke(() => { _onKeyBound("mouse", code, name); StopKeyBinding(); });
     }
 
-    private void OnBindingKeyPressed(int vkCode, string keyName)
+    private void OnBindingKeyPressed(int code, string name)
     {
         if (_onKeyBound == null) return;
+        if (code == 0x1B) { BeginInvoke(StopKeyBinding); return; }
+        BeginInvoke(() => { _onKeyBound("keyboard", code, name); StopKeyBinding(); });
+    }
 
-        // Ignore ESC - it cancels binding
-        if (vkCode == 0x1B) // ESC
-        {
-            this.BeginInvoke(StopKeyBinding);
-            return;
-        }
+    private void WireLeftEvents()
+    {
+        var s = _settingsService.Settings.LeftClick;
 
-        this.BeginInvoke(() =>
+        _leftEnabledCheckBox.CheckedChanged += (_, _) => { s.Enabled = _leftEnabledCheckBox.Checked; _settingsService.Save(); };
+
+        _leftKeyButton.Click += (_, _) => StartKeyBinding(_leftKeyButton, _leftKeyLabel, (t, c, n) =>
         {
-            _onKeyBound("keyboard", vkCode, keyName);
-            StopKeyBinding();
+            s.KeyType = t; s.KeyCode = c; s.KeyName = n;
+            _leftKeyLabel.Text = n;
+            _settingsService.Save();
         });
+
+        _leftHoldRadio.CheckedChanged += (_, _) => { if (_leftHoldRadio.Checked) { s.Mode = ActivationMode.Hold; _settingsService.Save(); } };
+        _leftToggleRadio.CheckedChanged += (_, _) => { if (_leftToggleRadio.Checked) { s.Mode = ActivationMode.Toggle; _settingsService.Save(); } };
+        _leftCpsNumeric.ValueChanged += (_, _) => { s.Cps = (int)_leftCpsNumeric.Value; _settingsService.Save(); };
+        _leftRandomNumeric.ValueChanged += (_, _) => { s.RandomPercent = (int)_leftRandomNumeric.Value; _settingsService.Save(); };
     }
 
-    private void WireUpLeftClickEvents()
+    private void WireRightEvents()
     {
-        _leftEnabledCheckBox.CheckedChanged += (s, e) =>
+        var s = _settingsService.Settings.RightClick;
+
+        _rightEnabledCheckBox.CheckedChanged += (_, _) => { s.Enabled = _rightEnabledCheckBox.Checked; _settingsService.Save(); };
+
+        _rightKeyButton.Click += (_, _) => StartKeyBinding(_rightKeyButton, _rightKeyLabel, (t, c, n) =>
         {
-            _settingsService.Settings.LeftClick.Enabled = _leftEnabledCheckBox.Checked;
+            s.KeyType = t; s.KeyCode = c; s.KeyName = n;
+            _rightKeyLabel.Text = n;
             _settingsService.Save();
-        };
+        });
 
-        _leftKeyButton.Click += (s, e) =>
-        {
-            StartKeyBinding(_leftKeyButton, _leftKeyLabel, (type, code, name) =>
-            {
-                _settingsService.Settings.LeftClick.KeyType = type;
-                _settingsService.Settings.LeftClick.KeyCode = code;
-                _settingsService.Settings.LeftClick.KeyName = name;
-                _settingsService.Save();
-                _leftKeyLabel.Text = name;
-            });
-        };
-
-        _leftHoldRadio.CheckedChanged += (s, e) =>
-        {
-            if (_leftHoldRadio.Checked)
-            {
-                _settingsService.Settings.LeftClick.Mode = ActivationMode.Hold;
-                _settingsService.Save();
-            }
-        };
-
-        _leftToggleRadio.CheckedChanged += (s, e) =>
-        {
-            if (_leftToggleRadio.Checked)
-            {
-                _settingsService.Settings.LeftClick.Mode = ActivationMode.Toggle;
-                _settingsService.Save();
-            }
-        };
-
-        _leftCpsNumeric.ValueChanged += (s, e) =>
-        {
-            _settingsService.Settings.LeftClick.Cps = (int)_leftCpsNumeric.Value;
-            _settingsService.Save();
-        };
+        _rightHoldRadio.CheckedChanged += (_, _) => { if (_rightHoldRadio.Checked) { s.Mode = ActivationMode.Hold; _settingsService.Save(); } };
+        _rightToggleRadio.CheckedChanged += (_, _) => { if (_rightToggleRadio.Checked) { s.Mode = ActivationMode.Toggle; _settingsService.Save(); } };
+        _rightCpsNumeric.ValueChanged += (_, _) => { s.Cps = (int)_rightCpsNumeric.Value; _settingsService.Save(); };
+        _rightRandomNumeric.ValueChanged += (_, _) => { s.RandomPercent = (int)_rightRandomNumeric.Value; _settingsService.Save(); };
     }
 
-    private void WireUpRightClickEvents()
+    private void WireSettingsEvents()
     {
-        _rightEnabledCheckBox.CheckedChanged += (s, e) =>
+        var master = _settingsService.Settings.MasterToggle;
+        var window = _settingsService.Settings.WindowTarget;
+
+        _masterToggleCheckBox.CheckedChanged += (_, _) => { master.Enabled = _masterToggleCheckBox.Checked; _settingsService.Save(); };
+
+        _masterKeyButton.Click += (_, _) => StartKeyBinding(_masterKeyButton, _masterKeyLabel, (t, c, n) =>
         {
-            _settingsService.Settings.RightClick.Enabled = _rightEnabledCheckBox.Checked;
+            master.KeyType = t; master.KeyCode = c; master.KeyName = n;
+            _masterKeyLabel.Text = n;
+            _masterKeyButton.BackColor = AccentOrange;
             _settingsService.Save();
-        };
+        });
 
-        _rightKeyButton.Click += (s, e) =>
+        _windowPickerButton.Click += (_, _) =>
         {
-            StartKeyBinding(_rightKeyButton, _rightKeyLabel, (type, code, name) =>
+            using var dialog = new WindowPickerDialog();
+            if (dialog.ShowDialog() == DialogResult.OK)
             {
-                _settingsService.Settings.RightClick.KeyType = type;
-                _settingsService.Settings.RightClick.KeyCode = code;
-                _settingsService.Settings.RightClick.KeyName = name;
+                if (dialog.AllApps)
+                {
+                    window.Enabled = false;
+                    window.ProcessName = "";
+                    _windowStatusLabel.Text = "Tüm uygulamalar";
+                }
+                else
+                {
+                    window.Enabled = dialog.SelectedProcesses.Count > 0;
+                    window.ProcessName = string.Join(",", dialog.SelectedProcesses);
+                    _windowStatusLabel.Text = window.Enabled
+                        ? $"{dialog.SelectedProcesses.Count} uygulama"
+                        : "Tüm uygulamalar";
+                }
                 _settingsService.Save();
-                _rightKeyLabel.Text = name;
-            });
-        };
-
-        _rightHoldRadio.CheckedChanged += (s, e) =>
-        {
-            if (_rightHoldRadio.Checked)
-            {
-                _settingsService.Settings.RightClick.Mode = ActivationMode.Hold;
-                _settingsService.Save();
+                _clickerService.UpdateWindowTargeting();
             }
         };
 
-        _rightToggleRadio.CheckedChanged += (s, e) =>
+        _startupCheckBox.CheckedChanged += (_, _) =>
         {
-            if (_rightToggleRadio.Checked)
-            {
-                _settingsService.Settings.RightClick.Mode = ActivationMode.Toggle;
-                _settingsService.Save();
-            }
-        };
-
-        _rightCpsNumeric.ValueChanged += (s, e) =>
-        {
-            _settingsService.Settings.RightClick.Cps = (int)_rightCpsNumeric.Value;
+            _settingsService.Settings.StartWithWindows = _startupCheckBox.Checked;
             _settingsService.Save();
+            StartupService.SetStartupEnabled(_startupCheckBox.Checked);
         };
     }
 
@@ -418,6 +632,7 @@ public partial class MainForm : Form
         _leftHoldRadio.Checked = left.Mode == ActivationMode.Hold;
         _leftToggleRadio.Checked = left.Mode == ActivationMode.Toggle;
         _leftCpsNumeric.Value = Math.Clamp(left.Cps, 1, 100);
+        _leftRandomNumeric.Value = Math.Clamp(left.RandomPercent, 0, 30);
 
         var right = _settingsService.Settings.RightClick;
         _rightEnabledCheckBox.Checked = right.Enabled;
@@ -425,37 +640,42 @@ public partial class MainForm : Form
         _rightHoldRadio.Checked = right.Mode == ActivationMode.Hold;
         _rightToggleRadio.Checked = right.Mode == ActivationMode.Toggle;
         _rightCpsNumeric.Value = Math.Clamp(right.Cps, 1, 100);
+        _rightRandomNumeric.Value = Math.Clamp(right.RandomPercent, 0, 30);
+
+        var master = _settingsService.Settings.MasterToggle;
+        _masterToggleCheckBox.Checked = master.Enabled;
+        _masterKeyLabel.Text = master.KeyName;
+
+        var window = _settingsService.Settings.WindowTarget;
+        _windowStatusLabel.Text = window.Enabled && !string.IsNullOrEmpty(window.ProcessName)
+            ? $"{window.ProcessName.Split(',').Length} uygulama"
+            : "Tüm uygulamalar";
+
+        _startupCheckBox.Checked = StartupService.IsStartupEnabled();
     }
 
     protected override void OnResize(EventArgs e)
     {
         base.OnResize(e);
-
         if (WindowState == FormWindowState.Minimized)
         {
             Hide();
             _trayIcon.Visible = true;
-            _trayIcon.ShowBalloonTip(1000, "Dual AutoClicker", "Sistem tepsisine küçültüldü", ToolTipIcon.Info);
         }
-    }
-
-    private void TrayIcon_DoubleClick(object? sender, EventArgs e)
-    {
-        Show();
-        WindowState = FormWindowState.Normal;
-        _trayIcon.Visible = false;
     }
 
     protected override void OnFormClosing(FormClosingEventArgs e)
     {
-        base.OnFormClosing(e);
-
         StopKeyBinding();
         _bindingMouseHook.Dispose();
         _bindingKeyboardHook.Dispose();
-
         _clickerService.Stop();
         _clickerService.Dispose();
         _trayIcon.Dispose();
+        _activeIcon.Dispose();
+        _inactiveIcon.Dispose();
+        _disabledIcon.Dispose();
+        _toolTip.Dispose();
+        base.OnFormClosing(e);
     }
 }

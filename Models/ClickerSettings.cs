@@ -24,6 +24,11 @@ public class SingleClickerSettings
 
     public ActivationMode Mode { get; set; } = ActivationMode.Hold;
     public int Cps { get; set; } = 16;
+
+    /// <summary>
+    /// Randomization percentage (0-30)
+    /// </summary>
+    public int RandomPercent { get; set; } = 0;
 }
 
 /// <summary>
@@ -38,7 +43,8 @@ public class ClickerSettings
         KeyCode = 4, // XButton1 (MB4)
         KeyName = "MB4",
         Mode = ActivationMode.Hold,
-        Cps = 16
+        Cps = 16,
+        RandomPercent = 0
     };
 
     public SingleClickerSettings RightClick { get; set; } = new()
@@ -48,8 +54,45 @@ public class ClickerSettings
         KeyCode = 5, // XButton2 (MB5)
         KeyName = "MB5",
         Mode = ActivationMode.Hold,
-        Cps = 33
+        Cps = 33,
+        RandomPercent = 0
     };
+
+    /// <summary>
+    /// Master toggle key settings
+    /// </summary>
+    public MasterToggleSettings MasterToggle { get; set; } = new();
+
+    /// <summary>
+    /// Target window settings
+    /// </summary>
+    public WindowTargetSettings WindowTarget { get; set; } = new();
+
+    /// <summary>
+    /// Start with Windows
+    /// </summary>
+    public bool StartWithWindows { get; set; } = false;
+}
+
+/// <summary>
+/// Master toggle key settings
+/// </summary>
+public class MasterToggleSettings
+{
+    public bool Enabled { get; set; } = false;
+    public string KeyType { get; set; } = "keyboard";
+    public int KeyCode { get; set; } = 0x77; // F8
+    public string KeyName { get; set; } = "F8";
+}
+
+/// <summary>
+/// Window targeting settings
+/// </summary>
+public class WindowTargetSettings
+{
+    public bool Enabled { get; set; } = false;
+    public string ProcessName { get; set; } = "";
+    public string WindowTitle { get; set; } = "";
 }
 
 /// <summary>
