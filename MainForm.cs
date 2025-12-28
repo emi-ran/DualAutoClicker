@@ -15,6 +15,7 @@ public partial class MainForm : Form
     private readonly SettingsService _settingsService;
     private readonly ClickerService _clickerService;
     private readonly NotifyIcon _trayIcon;
+    private Icon? _appIcon;
     private readonly Icon _activeIcon;
     private readonly Icon _inactiveIcon;
     private readonly Icon _disabledIcon;
@@ -70,7 +71,10 @@ public partial class MainForm : Form
 
         _clickerService = new ClickerService(_settingsService);
 
-        // Create status icons
+        // Load app icon first (needed for status icons)
+        LoadApplicationIcon();
+
+        // Create status icons with badge overlay
         _activeIcon = CreateStatusIcon(Color.LimeGreen);
         _inactiveIcon = CreateStatusIcon(Color.DodgerBlue);
         _disabledIcon = CreateStatusIcon(Color.Gray);
@@ -95,9 +99,6 @@ public partial class MainForm : Form
 
         InitializeComponent();
 
-        // Load icon
-        LoadApplicationIcon();
-
         // Setup tray
         _trayIcon = CreateTrayIcon();
 
@@ -107,10 +108,25 @@ public partial class MainForm : Form
 
     private void LoadApplicationIcon()
     {
-        var iconPath = Path.Combine(AppContext.BaseDirectory, "Resources", "icon.ico");
-        if (File.Exists(iconPath))
+        try
         {
-            this.Icon = new Icon(iconPath);
+            // Load from embedded resource
+            using var stream = typeof(MainForm).Assembly.GetManifestResourceStream("DualAutoClicker.icon.ico");
+            if (stream != null)
+            {
+                _appIcon = new Icon(stream);
+                this.Icon = _appIcon;
+            }
+        }
+        catch
+        {
+            // Fallback: try to load from file system
+            var iconPath = Path.Combine(AppContext.BaseDirectory, "Resources", "icon.ico");
+            if (File.Exists(iconPath))
+            {
+                _appIcon = new Icon(iconPath);
+                this.Icon = _appIcon;
+            }
         }
     }
 
@@ -133,17 +149,46 @@ public partial class MainForm : Form
         return tray;
     }
 
-    private Icon CreateStatusIcon(Color color)
+    private Icon CreateStatusIcon(Color badgeColor)
     {
-        var bmp = new Bitmap(32, 32); // Daha net olması için 32x32
-        using var g = Graphics.FromImage(bmp);
-        g.SmoothingMode = SmoothingMode.AntiAlias;
-        using var brush = new SolidBrush(color);
-        g.FillEllipse(brush, 4, 4, 24, 24);
+        const int size = 32;
+        const int badgeSize = 12;
+        var bmp = new Bitmap(size, size);
+
+        using (var g = Graphics.FromImage(bmp))
+        {
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+
+            // Draw app icon as base
+            if (_appIcon != null)
+            {
+                g.DrawIcon(_appIcon, new Rectangle(0, 0, size, size));
+            }
+            else
+            {
+                // Fallback: simple icon shape if app icon not available
+                using var fallbackBrush = new SolidBrush(Color.FromArgb(60, 60, 70));
+                g.FillRectangle(fallbackBrush, 2, 2, size - 4, size - 4);
+            }
+
+            // Draw badge in bottom-right corner
+            int badgeX = size - badgeSize - 1;
+            int badgeY = size - badgeSize - 1;
+
+            // Badge background (dark outline for visibility)
+            using var outlineBrush = new SolidBrush(Color.FromArgb(30, 30, 35));
+            g.FillEllipse(outlineBrush, badgeX - 1, badgeY - 1, badgeSize + 2, badgeSize + 2);
+
+            // Badge color fill
+            using var badgeBrush = new SolidBrush(badgeColor);
+            g.FillEllipse(badgeBrush, badgeX, badgeY, badgeSize, badgeSize);
+        }
 
         IntPtr hIcon = bmp.GetHicon();
-        Icon icon = (Icon)Icon.FromHandle(hIcon).Clone(); // Clone alıp handle'ı serbest bırakacağız
+        Icon icon = (Icon)Icon.FromHandle(hIcon).Clone();
         DestroyIcon(hIcon);
+        bmp.Dispose();
         return icon;
     }
 
