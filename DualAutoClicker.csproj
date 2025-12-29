@@ -11,6 +11,8 @@
     <!-- Single file publish (framework-dependent = smaller size) -->
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>false</SelfContained>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <DebugType>none</DebugType>
     
     <!-- Assembly info -->
     <AssemblyName>DualAutoClicker</AssemblyName>

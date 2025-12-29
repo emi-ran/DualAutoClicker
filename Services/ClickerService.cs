@@ -31,6 +31,16 @@ public class ClickerService : IDisposable
     public event Action<bool>? ClickingStateChanged;
 
     /// <summary>
+    /// Fired when left clicking state changes (for UI animations)
+    /// </summary>
+    public event Action<bool>? LeftClickingChanged;
+
+    /// <summary>
+    /// Fired when right clicking state changes (for UI animations)
+    /// </summary>
+    public event Action<bool>? RightClickingChanged;
+
+    /// <summary>
     /// Fired when master toggle state changes
     /// </summary>
     public event Action<bool>? MasterStateChanged;
@@ -207,6 +217,7 @@ public class ClickerService : IDisposable
         _leftClickActive = true;
         _leftClicker.Start(cps, randomPercent);
         ClickingStateChanged?.Invoke(IsClicking);
+        LeftClickingChanged?.Invoke(true);
     }
 
     private void StopLeftClicking()
@@ -215,6 +226,7 @@ public class ClickerService : IDisposable
         _leftClickActive = false;
         _leftClicker.Stop();
         ClickingStateChanged?.Invoke(IsClicking);
+        LeftClickingChanged?.Invoke(false);
     }
 
     private void StartRightClicking(int cps, int randomPercent)
@@ -223,6 +235,7 @@ public class ClickerService : IDisposable
         _rightClickActive = true;
         _rightClicker.Start(cps, randomPercent);
         ClickingStateChanged?.Invoke(IsClicking);
+        RightClickingChanged?.Invoke(true);
     }
 
     private void StopRightClicking()
@@ -231,6 +244,7 @@ public class ClickerService : IDisposable
         _rightClickActive = false;
         _rightClicker.Stop();
         ClickingStateChanged?.Invoke(IsClicking);
+        RightClickingChanged?.Invoke(false);
     }
 
     public void Dispose()
