@@ -201,11 +201,21 @@ public partial class MainForm : Form
         tray.DoubleClick += (s, e) => { Show(); WindowState = FormWindowState.Normal; };
 
         var menu = new ContextMenuStrip();
-        menu.BackColor = BgCard;
-        menu.ForeColor = TextPrimary;
-        menu.Items.Add("Göster", null, (s, e) => { Show(); WindowState = FormWindowState.Normal; });
-        menu.Items.Add("-");
-        menu.Items.Add("Çıkış", null, (s, e) => Application.Exit());
+        menu.BackColor = Color.FromArgb(30, 30, 35);
+        menu.ForeColor = Color.White;
+        menu.ShowImageMargin = false; // Soldaki beyaz alanı kaldır
+        menu.Renderer = new DarkMenuRenderer(); // Özel renderer
+
+        var showItem = new ToolStripMenuItem("Göster");
+        showItem.Click += (s, e) => { Show(); WindowState = FormWindowState.Normal; };
+        menu.Items.Add(showItem);
+
+        menu.Items.Add(new ToolStripSeparator());
+
+        var exitItem = new ToolStripMenuItem("Çıkış");
+        exitItem.Click += (s, e) => Application.Exit();
+        menu.Items.Add(exitItem);
+
         tray.ContextMenuStrip = menu;
 
         return tray;
@@ -1051,3 +1061,57 @@ public partial class MainForm : Form
         }
     }
 }
+
+/// <summary>
+/// Custom renderer for dark themed context menu
+/// </summary>
+public class DarkMenuRenderer : ToolStripProfessionalRenderer
+{
+    public DarkMenuRenderer() : base(new DarkMenuColors()) { }
+
+    protected override void OnRenderMenuItemBackground(ToolStripItemRenderEventArgs e)
+    {
+        var rc = new Rectangle(Point.Empty, e.Item.Size);
+
+        if (e.Item.Selected)
+        {
+            // Hover state - light background with readable text
+            using var brush = new SolidBrush(Color.FromArgb(60, 60, 70));
+            e.Graphics.FillRectangle(brush, rc);
+        }
+        else
+        {
+            // Normal state
+            using var brush = new SolidBrush(Color.FromArgb(30, 30, 35));
+            e.Graphics.FillRectangle(brush, rc);
+        }
+    }
+
+    protected override void OnRenderSeparator(ToolStripSeparatorRenderEventArgs e)
+    {
+        int y = e.Item.Height / 2;
+        using var pen = new Pen(Color.FromArgb(60, 60, 70));
+        e.Graphics.DrawLine(pen, 4, y, e.Item.Width - 4, y);
+    }
+
+    protected override void OnRenderToolStripBorder(ToolStripRenderEventArgs e)
+    {
+        using var pen = new Pen(Color.FromArgb(60, 60, 70));
+        var rect = new Rectangle(0, 0, e.ToolStrip.Width - 1, e.ToolStrip.Height - 1);
+        e.Graphics.DrawRectangle(pen, rect);
+    }
+}
+
+public class DarkMenuColors : ProfessionalColorTable
+{
+    public override Color MenuItemSelected => Color.FromArgb(60, 60, 70);
+    public override Color MenuItemBorder => Color.Transparent;
+    public override Color MenuBorder => Color.FromArgb(60, 60, 70);
+    public override Color ToolStripDropDownBackground => Color.FromArgb(30, 30, 35);
+    public override Color ImageMarginGradientBegin => Color.FromArgb(30, 30, 35);
+    public override Color ImageMarginGradientMiddle => Color.FromArgb(30, 30, 35);
+    public override Color ImageMarginGradientEnd => Color.FromArgb(30, 30, 35);
+    public override Color SeparatorDark => Color.FromArgb(60, 60, 70);
+    public override Color SeparatorLight => Color.FromArgb(60, 60, 70);
+}
+
