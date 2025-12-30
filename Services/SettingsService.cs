@@ -25,6 +25,8 @@ public class SettingsService
 
     public ClickerSettings Settings => _settings;
 
+    public event Action<int>? ProfileChanged;
+
     /// <summary>
     /// Load settings from disk, or create default if not exists
     /// </summary>
@@ -36,6 +38,18 @@ public class SettingsService
             {
                 var json = File.ReadAllText(SettingsFilePath);
                 _settings = JsonSerializer.Deserialize<ClickerSettings>(json, JsonOptions) ?? new();
+
+                // Ensure we have 6 profiles
+                while (_settings.Profiles.Count < 6)
+                {
+                    _settings.Profiles.Add(ProfileSettings.CreateDefault(_settings.Profiles.Count));
+                }
+
+                // Validate active profile index
+                if (_settings.ActiveProfileIndex < 0 || _settings.ActiveProfileIndex >= 6)
+                {
+                    _settings.ActiveProfileIndex = 0;
+                }
             }
         }
         catch
@@ -72,4 +86,36 @@ public class SettingsService
         updateAction(_settings);
         Save();
     }
+
+    /// <summary>
+    /// Switch to a different profile
+    /// </summary>
+    public void SwitchProfile(int profileIndex)
+    {
+        if (profileIndex < 0 || profileIndex >= 6) return;
+
+        _settings.ActiveProfileIndex = profileIndex;
+        Save();
+        ProfileChanged?.Invoke(profileIndex);
+    }
+
+    /// <summary>
+    /// Get the currently active profile
+    /// </summary>
+    public ProfileSettings GetActiveProfile()
+    {
+        return _settings.ActiveProfile;
+    }
+
+    /// <summary>
+    /// Update the name of a profile
+    /// </summary>
+    public void UpdateProfileName(int profileIndex, string name)
+    {
+        if (profileIndex < 0 || profileIndex >= 6) return;
+
+        _settings.Profiles[profileIndex].Name = name;
+        Save();
+    }
 }
+

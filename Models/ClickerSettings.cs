@@ -23,7 +23,7 @@ public class SingleClickerSettings
     public string KeyName { get; set; } = "MB4";
 
     public ActivationMode Mode { get; set; } = ActivationMode.Hold;
-    public int Cps { get; set; } = 16;
+    public int Cps { get; set; } = 20;
 
     /// <summary>
     /// Randomization percentage (0-30)
@@ -32,18 +32,20 @@ public class SingleClickerSettings
 }
 
 /// <summary>
-/// Root settings containing both left and right click configurations
+/// A profile containing clicker settings
 /// </summary>
-public class ClickerSettings
+public class ProfileSettings
 {
+    public string Name { get; set; } = "Profil";
+
     public SingleClickerSettings LeftClick { get; set; } = new()
     {
         Enabled = true,
         KeyType = "mouse",
-        KeyCode = 4, // XButton1 (MB4)
-        KeyName = "MB4",
+        KeyCode = 5, // XButton2 (MB5)
+        KeyName = "MB5",
         Mode = ActivationMode.Hold,
-        Cps = 16,
+        Cps = 20,
         RandomPercent = 0
     };
 
@@ -51,10 +53,10 @@ public class ClickerSettings
     {
         Enabled = true,
         KeyType = "mouse",
-        KeyCode = 5, // XButton2 (MB5)
-        KeyName = "MB5",
+        KeyCode = 4, // XButton1 (MB4)
+        KeyName = "MB4",
         Mode = ActivationMode.Hold,
-        Cps = 33,
+        Cps = 20,
         RandomPercent = 0
     };
 
@@ -69,9 +71,88 @@ public class ClickerSettings
     public WindowTargetSettings WindowTarget { get; set; } = new();
 
     /// <summary>
-    /// Start with Windows
+    /// Creates a default profile with specified index
+    /// </summary>
+    public static ProfileSettings CreateDefault(int index)
+    {
+        return new ProfileSettings
+        {
+            Name = $"Profil {index + 1}",
+            LeftClick = new SingleClickerSettings
+            {
+                Enabled = true,
+                KeyType = "mouse",
+                KeyCode = 5, // XButton2 (MB5)
+                KeyName = "MB5",
+                Mode = ActivationMode.Hold,
+                Cps = 20,
+                RandomPercent = 0
+            },
+            RightClick = new SingleClickerSettings
+            {
+                Enabled = true,
+                KeyType = "mouse",
+                KeyCode = 4, // XButton1 (MB4)
+                KeyName = "MB4",
+                Mode = ActivationMode.Hold,
+                Cps = 20,
+                RandomPercent = 0
+            },
+            MasterToggle = new MasterToggleSettings
+            {
+                Enabled = false,
+                KeyType = "keyboard",
+                KeyCode = 0x77, // F8
+                KeyName = "F8"
+            },
+            WindowTarget = new WindowTargetSettings
+            {
+                Enabled = false,
+                ProcessName = "",
+                WindowTitle = ""
+            }
+        };
+    }
+}
+
+/// <summary>
+/// Root settings containing profiles and global settings
+/// </summary>
+public class ClickerSettings
+{
+    /// <summary>
+    /// All 6 profiles
+    /// </summary>
+    public List<ProfileSettings> Profiles { get; set; } = new()
+    {
+        ProfileSettings.CreateDefault(0),
+        ProfileSettings.CreateDefault(1),
+        ProfileSettings.CreateDefault(2),
+        ProfileSettings.CreateDefault(3),
+        ProfileSettings.CreateDefault(4),
+        ProfileSettings.CreateDefault(5)
+    };
+
+    /// <summary>
+    /// Currently active profile index (0-5)
+    /// </summary>
+    public int ActiveProfileIndex { get; set; } = 0;
+
+    /// <summary>
+    /// Start with Windows (global, not per-profile)
     /// </summary>
     public bool StartWithWindows { get; set; } = false;
+
+    /// <summary>
+    /// Gets the currently active profile
+    /// </summary>
+    public ProfileSettings ActiveProfile => Profiles[ActiveProfileIndex];
+
+    // Legacy compatibility properties - redirect to active profile
+    public SingleClickerSettings LeftClick => ActiveProfile.LeftClick;
+    public SingleClickerSettings RightClick => ActiveProfile.RightClick;
+    public MasterToggleSettings MasterToggle => ActiveProfile.MasterToggle;
+    public WindowTargetSettings WindowTarget => ActiveProfile.WindowTarget;
 }
 
 /// <summary>

@@ -76,6 +76,10 @@ public partial class MainForm : Form
     private Label _windowStatusLabel = null!;
     private CheckBox _startupCheckBox = null!;
 
+    // UI Controls - Profiles
+    private readonly Button[] _profileButtons = new Button[6];
+    private int _editingProfileIndex = -1;
+
     // Modern Color Palette
     private static readonly Color BgDark = Color.FromArgb(13, 13, 18);
     private static readonly Color BgCard = Color.FromArgb(22, 22, 30);
@@ -121,6 +125,7 @@ public partial class MainForm : Form
 
         _clickerService.ClickingStateChanged += OnClickingStateChanged;
         _clickerService.MasterStateChanged += OnMasterStateChanged;
+        _settingsService.ProfileChanged += OnProfileChanged;
 
         _toolTip = new ToolTip
         {
@@ -286,8 +291,8 @@ public partial class MainForm : Form
 
         // Borderless Form
         this.Text = "Dual AutoClicker";
-        this.Size = new Size(700, 520);
-        this.MinimumSize = new Size(700, 520);
+        this.Size = new Size(680, 485);
+        this.MinimumSize = new Size(680, 485);
         this.FormBorderStyle = FormBorderStyle.None;
         this.StartPosition = FormStartPosition.CenterScreen;
         this.BackColor = BgDark;
@@ -305,15 +310,15 @@ public partial class MainForm : Form
         // Main container with padding
         var mainContainer = new Panel
         {
-            Location = new Point(20, 55),
-            Size = new Size(660, 445),
+            Location = new Point(20, 50),
+            Size = new Size(640, 420),
             BackColor = Color.Transparent
         };
         this.Controls.Add(mainContainer);
 
         // Panels
         _leftPanel = CreateClickerPanel("SOL TIK", 0, 0, AccentCyan, AccentPurple, true);
-        _rightPanel = CreateClickerPanel("SAĞ TIK", 340, 0, AccentPink, AccentOrange, false);
+        _rightPanel = CreateClickerPanel("SAĞ TIK", 325, 0, AccentPink, AccentOrange, false);
         var settingsPanel = CreateSettingsPanel();
 
         mainContainer.Controls.Add(_leftPanel);
@@ -351,7 +356,7 @@ public partial class MainForm : Form
         var titleBar = new Panel
         {
             Location = new Point(0, 0),
-            Size = new Size(700, 50),
+            Size = new Size(680, 45),
             BackColor = Color.Transparent
         };
         titleBar.MouseDown += Form_MouseDown;
@@ -363,30 +368,78 @@ public partial class MainForm : Form
 
             // Gradient line at bottom
             using var lineBrush = new LinearGradientBrush(
-                new Point(0, 49),
-                new Point(700, 49),
+                new Point(0, 44),
+                new Point(680, 44),
                 AccentCyan,
                 AccentPurple);
             using var linePen = new Pen(lineBrush, 2);
-            g.DrawLine(linePen, 0, 49, 700, 49);
+            g.DrawLine(linePen, 0, 44, 680, 44);
         };
 
         // Logo/Title with gradient effect
         var titleLabel = new Label
         {
-            Text = "⚡ DUAL AUTOCLICKER",
-            Location = new Point(20, 10),
+            Text = "⚡",
+            Location = new Point(15, 10),
             AutoSize = true,
-            Font = new Font("Segoe UI", 16, FontStyle.Bold),
+            Font = new Font("Segoe UI", 14, FontStyle.Bold),
             ForeColor = TextPrimary,
             BackColor = Color.Transparent
         };
         titleLabel.MouseDown += Form_MouseDown;
         titleBar.Controls.Add(titleLabel);
 
+        // Profile buttons (6 buttons)
+        int profileStartX = 55;
+        int activeIndex = _settingsService.Settings.ActiveProfileIndex;
+
+        for (int i = 0; i < 6; i++)
+        {
+            int index = i; // Capture for closure
+            var profile = _settingsService.Settings.Profiles[i];
+
+            var profileBtn = new Button
+            {
+                Text = profile.Name,
+                Location = new Point(profileStartX + (i * 78), 8),
+                Size = new Size(75, 28),
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI", 8.5f, index == activeIndex ? FontStyle.Bold : FontStyle.Regular),
+                ForeColor = index == activeIndex ? Color.White : TextSecondary,
+                BackColor = index == activeIndex ? AccentCyan : BgInput,
+                Cursor = Cursors.Hand,
+                Tag = index
+            };
+            profileBtn.FlatAppearance.BorderSize = index == activeIndex ? 0 : 1;
+            profileBtn.FlatAppearance.BorderColor = BorderColor;
+            profileBtn.FlatAppearance.MouseOverBackColor = index == activeIndex ? AccentPurple : BgCardHover;
+
+            // Left click to select profile
+            profileBtn.Click += (s, e) =>
+            {
+                if (_editingProfileIndex == -1)
+                {
+                    _settingsService.SwitchProfile(index);
+                    UpdateProfileButtonStyles();
+                }
+            };
+
+            // Right click to edit profile name
+            profileBtn.MouseUp += (s, e) =>
+            {
+                if (e.Button == MouseButtons.Right)
+                {
+                    ShowProfileRenameDialog(index);
+                }
+            };
+
+            _profileButtons[i] = profileBtn;
+            titleBar.Controls.Add(profileBtn);
+        }
+
         // Window controls
-        var closeBtn = CreateWindowButton("✕", 655, 10, () => Application.Exit());
-        var minBtn = CreateWindowButton("─", 620, 10, () => WindowState = FormWindowState.Minimized);
+        var closeBtn = CreateWindowButton("✕", 635, 8, () => Application.Exit());
+        var minBtn = CreateWindowButton("─", 600, 8, () => WindowState = FormWindowState.Minimized);
 
         titleBar.Controls.Add(closeBtn);
         titleBar.Controls.Add(minBtn);
@@ -424,7 +477,7 @@ public partial class MainForm : Form
         var panel = new Panel
         {
             Location = new Point(x, y),
-            Size = new Size(310, 220),
+            Size = new Size(315, 210),
             BackColor = BgCard
         };
 
@@ -603,8 +656,8 @@ public partial class MainForm : Form
     {
         var panel = new Panel
         {
-            Location = new Point(0, 235),
-            Size = new Size(660, 210),
+            Location = new Point(0, 220),
+            Size = new Size(640, 200),
             BackColor = BgCard
         };
 
@@ -717,7 +770,7 @@ public partial class MainForm : Form
         var bottomContainer = new Panel
         {
             Location = new Point(20, yPos),
-            Size = new Size(620, 45),
+            Size = new Size(600, 40),
             BackColor = Color.Transparent
         };
         panel.Controls.Add(bottomContainer);
@@ -887,10 +940,9 @@ public partial class MainForm : Form
 
     private void WireLeftEvents()
     {
-        var s = _settingsService.Settings.LeftClick;
-
         _leftEnabledCheckBox.CheckedChanged += (_, _) =>
         {
+            var s = _settingsService.Settings.LeftClick;
             s.Enabled = _leftEnabledCheckBox.Checked;
             _settingsService.Save();
             _leftStatusIndicator?.Invalidate();
@@ -898,15 +950,16 @@ public partial class MainForm : Form
 
         _leftKeyButton.Click += (_, _) => StartKeyBinding(_leftKeyButton, _leftKeyLabel, (t, c, n) =>
         {
+            var s = _settingsService.Settings.LeftClick;
             s.KeyType = t; s.KeyCode = c; s.KeyName = n;
             _leftKeyLabel.Text = n;
             _settingsService.Save();
         });
 
-        _leftHoldRadio.CheckedChanged += (_, _) => { if (_leftHoldRadio.Checked) { s.Mode = ActivationMode.Hold; _settingsService.Save(); } };
-        _leftToggleRadio.CheckedChanged += (_, _) => { if (_leftToggleRadio.Checked) { s.Mode = ActivationMode.Toggle; _settingsService.Save(); } };
-        _leftCpsNumeric.ValueChanged += (_, _) => { s.Cps = (int)_leftCpsNumeric.Value; _settingsService.Save(); };
-        _leftRandomNumeric.ValueChanged += (_, _) => { s.RandomPercent = (int)_leftRandomNumeric.Value; _settingsService.Save(); };
+        _leftHoldRadio.CheckedChanged += (_, _) => { if (_leftHoldRadio.Checked) { _settingsService.Settings.LeftClick.Mode = ActivationMode.Hold; _settingsService.Save(); } };
+        _leftToggleRadio.CheckedChanged += (_, _) => { if (_leftToggleRadio.Checked) { _settingsService.Settings.LeftClick.Mode = ActivationMode.Toggle; _settingsService.Save(); } };
+        _leftCpsNumeric.ValueChanged += (_, _) => { _settingsService.Settings.LeftClick.Cps = (int)_leftCpsNumeric.Value; _settingsService.Save(); };
+        _leftRandomNumeric.ValueChanged += (_, _) => { _settingsService.Settings.LeftClick.RandomPercent = (int)_leftRandomNumeric.Value; _settingsService.Save(); };
 
         // Track clicking state for animations
         _clickerService.LeftClickingChanged += (clicking) =>
@@ -918,10 +971,9 @@ public partial class MainForm : Form
 
     private void WireRightEvents()
     {
-        var s = _settingsService.Settings.RightClick;
-
         _rightEnabledCheckBox.CheckedChanged += (_, _) =>
         {
+            var s = _settingsService.Settings.RightClick;
             s.Enabled = _rightEnabledCheckBox.Checked;
             _settingsService.Save();
             _rightStatusIndicator?.Invalidate();
@@ -929,15 +981,16 @@ public partial class MainForm : Form
 
         _rightKeyButton.Click += (_, _) => StartKeyBinding(_rightKeyButton, _rightKeyLabel, (t, c, n) =>
         {
+            var s = _settingsService.Settings.RightClick;
             s.KeyType = t; s.KeyCode = c; s.KeyName = n;
             _rightKeyLabel.Text = n;
             _settingsService.Save();
         });
 
-        _rightHoldRadio.CheckedChanged += (_, _) => { if (_rightHoldRadio.Checked) { s.Mode = ActivationMode.Hold; _settingsService.Save(); } };
-        _rightToggleRadio.CheckedChanged += (_, _) => { if (_rightToggleRadio.Checked) { s.Mode = ActivationMode.Toggle; _settingsService.Save(); } };
-        _rightCpsNumeric.ValueChanged += (_, _) => { s.Cps = (int)_rightCpsNumeric.Value; _settingsService.Save(); };
-        _rightRandomNumeric.ValueChanged += (_, _) => { s.RandomPercent = (int)_rightRandomNumeric.Value; _settingsService.Save(); };
+        _rightHoldRadio.CheckedChanged += (_, _) => { if (_rightHoldRadio.Checked) { _settingsService.Settings.RightClick.Mode = ActivationMode.Hold; _settingsService.Save(); } };
+        _rightToggleRadio.CheckedChanged += (_, _) => { if (_rightToggleRadio.Checked) { _settingsService.Settings.RightClick.Mode = ActivationMode.Toggle; _settingsService.Save(); } };
+        _rightCpsNumeric.ValueChanged += (_, _) => { _settingsService.Settings.RightClick.Cps = (int)_rightCpsNumeric.Value; _settingsService.Save(); };
+        _rightRandomNumeric.ValueChanged += (_, _) => { _settingsService.Settings.RightClick.RandomPercent = (int)_rightRandomNumeric.Value; _settingsService.Save(); };
 
         // Track clicking state for animations
         _clickerService.RightClickingChanged += (clicking) =>
@@ -949,13 +1002,15 @@ public partial class MainForm : Form
 
     private void WireSettingsEvents()
     {
-        var master = _settingsService.Settings.MasterToggle;
-        var window = _settingsService.Settings.WindowTarget;
-
-        _masterToggleCheckBox.CheckedChanged += (_, _) => { master.Enabled = _masterToggleCheckBox.Checked; _settingsService.Save(); };
+        _masterToggleCheckBox.CheckedChanged += (_, _) =>
+        {
+            _settingsService.Settings.MasterToggle.Enabled = _masterToggleCheckBox.Checked;
+            _settingsService.Save();
+        };
 
         _masterKeyButton.Click += (_, _) => StartKeyBinding(_masterKeyButton, _masterKeyLabel, (t, c, n) =>
         {
+            var master = _settingsService.Settings.MasterToggle;
             master.KeyType = t; master.KeyCode = c; master.KeyName = n;
             _masterKeyLabel.Text = n;
             _masterKeyButton.BackColor = AccentOrange;
@@ -967,6 +1022,7 @@ public partial class MainForm : Form
             using var dialog = new WindowPickerDialog();
             if (dialog.ShowDialog() == DialogResult.OK)
             {
+                var window = _settingsService.Settings.WindowTarget;
                 if (dialog.AllApps)
                 {
                     window.Enabled = false;
@@ -1060,7 +1116,114 @@ public partial class MainForm : Form
             return cp;
         }
     }
+
+    // Profile management methods
+    private void OnProfileChanged(int profileIndex)
+    {
+        BeginInvoke(() =>
+        {
+            LoadSettingsToUI();
+            UpdateProfileButtonStyles();
+        });
+    }
+
+    private void UpdateProfileButtonStyles()
+    {
+        int activeIndex = _settingsService.Settings.ActiveProfileIndex;
+
+        for (int i = 0; i < 6; i++)
+        {
+            var btn = _profileButtons[i];
+            if (btn == null) continue;
+
+            bool isActive = i == activeIndex;
+            var profile = _settingsService.Settings.Profiles[i];
+
+            btn.Text = profile.Name;
+            btn.Font = new Font("Segoe UI", 8.5f, isActive ? FontStyle.Bold : FontStyle.Regular);
+            btn.ForeColor = isActive ? Color.White : TextSecondary;
+            btn.BackColor = isActive ? AccentCyan : BgInput;
+            btn.FlatAppearance.BorderSize = isActive ? 0 : 1;
+            btn.FlatAppearance.MouseOverBackColor = isActive ? AccentPurple : BgCardHover;
+        }
+    }
+
+    private void ShowProfileRenameDialog(int profileIndex)
+    {
+        var profile = _settingsService.Settings.Profiles[profileIndex];
+
+        // Create a simple input dialog
+        using var dialog = new Form
+        {
+            Text = "Profil Adını Değiştir",
+            Size = new Size(320, 140),
+            StartPosition = FormStartPosition.CenterParent,
+            FormBorderStyle = FormBorderStyle.FixedDialog,
+            MaximizeBox = false,
+            MinimizeBox = false,
+            BackColor = BgDark,
+            ForeColor = TextPrimary
+        };
+
+        var label = new Label
+        {
+            Text = "Profil Adı:",
+            Location = new Point(20, 20),
+            Size = new Size(80, 25),
+            ForeColor = TextPrimary
+        };
+        dialog.Controls.Add(label);
+
+        var textBox = new TextBox
+        {
+            Text = profile.Name,
+            Location = new Point(100, 18),
+            Size = new Size(180, 25),
+            BackColor = BgInput,
+            ForeColor = TextPrimary,
+            BorderStyle = BorderStyle.FixedSingle,
+            MaxLength = 12
+        };
+        dialog.Controls.Add(textBox);
+
+        var okButton = new Button
+        {
+            Text = "Kaydet",
+            Location = new Point(100, 55),
+            Size = new Size(80, 30),
+            FlatStyle = FlatStyle.Flat,
+            BackColor = AccentCyan,
+            ForeColor = Color.White,
+            DialogResult = DialogResult.OK
+        };
+        okButton.FlatAppearance.BorderSize = 0;
+        dialog.Controls.Add(okButton);
+
+        var cancelButton = new Button
+        {
+            Text = "İptal",
+            Location = new Point(190, 55),
+            Size = new Size(80, 30),
+            FlatStyle = FlatStyle.Flat,
+            BackColor = BgInput,
+            ForeColor = TextSecondary,
+            DialogResult = DialogResult.Cancel
+        };
+        cancelButton.FlatAppearance.BorderSize = 1;
+        cancelButton.FlatAppearance.BorderColor = BorderColor;
+        dialog.Controls.Add(cancelButton);
+
+        dialog.AcceptButton = okButton;
+        dialog.CancelButton = cancelButton;
+
+        if (dialog.ShowDialog(this) == DialogResult.OK && !string.IsNullOrWhiteSpace(textBox.Text))
+        {
+            _settingsService.UpdateProfileName(profileIndex, textBox.Text.Trim());
+            UpdateProfileButtonStyles();
+        }
+    }
 }
+
 
 /// <summary>
 /// Custom renderer for dark themed context menu
