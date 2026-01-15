@@ -46,8 +46,6 @@ public class ClickerService : IDisposable
     public event Action<bool>? MasterStateChanged;
 
     public bool IsClicking => _leftClickActive || _rightClickActive;
-    public bool IsLeftClicking => _leftClickActive;
-    public bool IsRightClicking => _rightClickActive;
     public bool MasterEnabled => _masterEnabled;
 
     public ClickerService(SettingsService settingsService)
