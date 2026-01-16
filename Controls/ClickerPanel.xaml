@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="DualAutoClicker.Controls.ClickerPanel"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:DualAutoClicker.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Border x:Name="CardBorder" 
+            Background="{StaticResource BgCardBrush}" 
+            CornerRadius="{StaticResource MediumRadius}"
+            Padding="20"
+            BorderThickness="0,3,0,0">
+        
+        <Grid RowSpacing="20" VerticalAlignment="Center">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header with Status Indicator -->
+            <Grid Grid.Row="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Status Indicator -->
+                <Ellipse x:Name="StatusIndicator" 
+                         Grid.Column="0"
+                         Width="16" Height="16"
+                         Fill="{StaticResource TextMutedBrush}"
+                         Margin="0,0,12,0"
+                         VerticalAlignment="Center"/>
+
+                <!-- Enable Checkbox with Title -->
+                <CheckBox x:Name="EnabledCheckBox" 
+                          Grid.Column="1"
+                          Content="SOL TIK"
+                          FontSize="18"
+                          FontWeight="SemiBold"
+                          Foreground="{StaticResource TextPrimaryBrush}"
+                          Checked="EnabledCheckBox_Changed"
+                          Unchecked="EnabledCheckBox_Changed"/>
+            </Grid>
+
+            <!-- Activation Key Row -->
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" 
+                           Text="Aktivasyon Tuşu" 
+                           Style="{StaticResource BodyTextStyle}"
+                           VerticalAlignment="Center"/>
+
+                <Border Grid.Column="1" Style="{StaticResource KeyLabelStyle}" Margin="0,0,8,0">
+                    <TextBlock x:Name="KeyLabel" 
+                               Text="MB4" 
+                               FontSize="14"
+                               FontWeight="Bold"
+                               Foreground="{StaticResource AccentCyanBrush}"
+                               HorizontalAlignment="Center"/>
+                </Border>
+
+                <Button x:Name="ChangeKeyButton" 
+                        Grid.Column="2"
+                        Content="Değiştir"
+                        Style="{StaticResource AccentButtonStyle}"
+                        Click="ChangeKeyButton_Click"/>
+            </Grid>
+
+            <!-- Mode Selection Row -->
+            <Grid Grid.Row="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" 
+                           Text="Mod" 
+                           Style="{StaticResource BodyTextStyle}"
+                           VerticalAlignment="Center"
+                           Margin="0,0,16,0"/>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="24">
+                    <RadioButton x:Name="HoldRadio" 
+                                 Content="Basılı Tut" 
+                                 Foreground="{StaticResource TextPrimaryBrush}"
+                                 Checked="ModeRadio_Changed"/>
+                    <RadioButton x:Name="ToggleRadio" 
+                                 Content="Toggle" 
+                                 Foreground="{StaticResource TextPrimaryBrush}"
+                                 Checked="ModeRadio_Changed"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- CPS and Random Row -->
+            <Border Grid.Row="3" 
+                    Background="{StaticResource BgInputBrush}" 
+                    CornerRadius="{StaticResource SmallRadius}"
+                    Padding="16,12">
+                <Grid ColumnSpacing="24">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- CPS -->
+                    <Grid Grid.Column="0" ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <TextBlock x:Name="CpsLabel"
+                                   Grid.Column="0"
+                                   Text="CPS" 
+                                   FontSize="14"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource AccentCyanBrush}"
+                                   VerticalAlignment="Center"/>
+                                   
+                        <NumberBox x:Name="CpsNumberBox"
+                                   Grid.Column="1"
+                                   Value="16"
+                                   Minimum="1"
+                                   Maximum="100"
+                                   SpinButtonPlacementMode="Hidden"
+                                   SmallChange="1"
+                                   LargeChange="5"
+                                   ValueChanged="CpsNumberBox_ValueChanged"
+                                   Background="{StaticResource BgCardBrush}"
+                                   BorderBrush="{StaticResource BorderBrush}"
+                                   BorderThickness="1"
+                                   CornerRadius="4"/>
+                    </Grid>
+
+                    <!-- Random -->
+                    <Grid Grid.Column="1" ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock x:Name="RandomLabel"
+                                   Grid.Column="0"
+                                   Text="Dağılım" 
+                                   FontSize="14"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource AccentPurpleBrush}"
+                                   VerticalAlignment="Center"
+                                   ToolTipService.ToolTip="Rastgele: CPS'e varyasyon ekler"/>
+                                   
+                        <NumberBox x:Name="RandomNumberBox"
+                                   Grid.Column="1"
+                                   Value="0"
+                                   Minimum="0"
+                                   Maximum="30"
+                                   SpinButtonPlacementMode="Hidden"
+                                   SmallChange="1"
+                                   LargeChange="5"
+                                   ValueChanged="RandomNumberBox_ValueChanged"
+                                   Background="{StaticResource BgCardBrush}"
+                                   BorderBrush="{StaticResource BorderBrush}"
+                                   BorderThickness="1"
+                                   CornerRadius="4"/>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
+</UserControl>

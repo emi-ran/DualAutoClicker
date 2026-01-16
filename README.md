@@ -5,7 +5,8 @@ Bağımsız sol ve sağ tık ayarlarına sahip, 6 profil destekli, yüksek perfo
 ![Platform](https://img.shields.io/badge/Platform-Windows-blue)
 ![.NET](https://img.shields.io/badge/.NET-8.0-purple)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Version](https://img.shields.io/badge/Version-1.1.0-orange)
+![Version](https://img.shields.io/badge/Version-3.0.0-orange)
+
 
 ## ✨ Özellikler
 
@@ -26,11 +27,26 @@ Bağımsız sol ve sağ tık ayarlarına sahip, 6 profil destekli, yüksek perfo
 
 - Windows 10 veya 11
 - [.NET 8.0 Runtime](https://dotnet.microsoft.com/download/dotnet/8.0)
+- Inno Setup 6 (installer üretmek için)
+
 
 ### Hızlı Başlat
 
-1. [Releases](../../releases) sayfasından `DualAutoClicker.exe` dosyasını indirin.
-2. Uygulamayı çalıştırın. Kurulum gerektirmez, tek dosyadır.
+1. [Releases](../../releases) sayfasından `DualAutoClicker-Setup.exe` dosyasını indirin.
+2. Kurulumu başlatın ve isteğe bağlı masaüstü kısayolu seçin.
+3. Kurulumdan sonra uygulamayı başlatın.
+
+### Geliştirici (Installer)
+
+```powershell
+python build_installer.py
+```
+
+Bu komut:
+- `dotnet publish` ile `publish` klasörünü üretir.
+- `installer.iss` dosyasını `.csproj` içinden otomatik oluşturur.
+- Inno Setup ile `DualAutoClicker-Setup.exe` kurulum dosyasını üretir.
+
 
 ## 🎮 Kullanım
 
