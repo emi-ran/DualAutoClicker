@@ -268,6 +268,8 @@ public sealed partial class MainWindow : Window
 
         // Load general settings
         SettingsPanel.LoadSettings(_settingsService);
+        RootGrid.Opacity = _clickerService.MasterEnabled ? 1.0 : 0.5;
+
     }
 
     private void OnProfileChanged(int profileIndex)
@@ -295,8 +297,10 @@ public sealed partial class MainWindow : Window
         {
             // Update UI based on master state
             SettingsPanel.UpdateMasterState(enabled);
+            RootGrid.Opacity = enabled ? 1.0 : 0.5;
         });
     }
+
 
     private void MinimizeButton_Click(object sender, RoutedEventArgs e)
     {

@@ -28,6 +28,8 @@ Bağımsız sol ve sağ tık ayarlarına sahip, 6 profil destekli, yüksek perfo
 - Windows 10 veya 11
 - [.NET 8.0 Runtime](https://dotnet.microsoft.com/download/dotnet/8.0)
 - Inno Setup 6 (installer üretmek için)
+- Windows SDK (signtool ile imzalama için)
+
 
 
 ### Hızlı Başlat
@@ -42,10 +44,18 @@ Bağımsız sol ve sağ tık ayarlarına sahip, 6 profil destekli, yüksek perfo
 python build_installer.py
 ```
 
+İmzalı kurulum üretmek için:
+
+```powershell
+python build_installer.py --cert Cert.pfx --cert-pass Certpass
+```
+
 Bu komut:
 - `dotnet publish` ile `publish` klasörünü üretir.
 - `installer.iss` dosyasını `.csproj` içinden otomatik oluşturur.
 - Inno Setup ile `DualAutoClicker-Setup.exe` kurulum dosyasını üretir.
+- Sertifika verildiyse yayınlanan exe ve kurulum dosyasını imzalar.
+
 
 
 ## 🎮 Kullanım

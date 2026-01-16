@@ -3,12 +3,12 @@
 
 #define MyAppName "Dual AutoClicker"
 #define MyAppExeName "DualAutoClicker.exe"
-#define MyAppVersion "10.0.17763.0"
+#define MyAppVersion "3.0.0"
 #define MyAppPublisher "DualAutoClicker"
 #define MyAppURL "https://github.com/"
 
 [Setup]
-AppId={{20ff3dc0-a383-4587-ac4f-66d510171a0c}}
+AppId={{c0f907c7-8636-41a0-8b58-1d8769722df0}}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
@@ -31,7 +31,7 @@ Name: "turkish"; MessagesFile: "compiler:Languages\Turkish.isl"
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
-Name: "desktopicon"; Description: "Masaüstü kısayolu oluştur"; GroupDescription: "Ek görevler"; Flags: unchecked
+Name: "desktopicon"; Description: "Masaüstü kısayolu oluştur"; GroupDescription: "Ek görevler"
 
 [Files]
 Source: "C:\Users\enes\Documents\GitHub\DualAutoClicker\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs

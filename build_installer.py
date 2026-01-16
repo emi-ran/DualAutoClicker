@@ -1,9 +1,11 @@
 import argparse
+import shutil
 import subprocess
 import sys
 import uuid
 from pathlib import Path
 import xml.etree.ElementTree as ET
+
 
 
 def read_csproj_metadata(csproj_path: Path) -> dict:
@@ -12,9 +14,11 @@ def read_csproj_metadata(csproj_path: Path) -> dict:
 
     def find_text(tag: str, default: str = "") -> str:
         for elem in root.iter():
-            if elem.tag.endswith(tag) and elem.text:
+            local_name = elem.tag.split("}")[-1]
+            if local_name == tag and elem.text:
                 return elem.text.strip()
         return default
+
 
     return {
         "app_name": find_text("Product", "Dual AutoClicker"),
@@ -34,6 +38,94 @@ def resolve_iscc() -> str:
         if Path(path).exists():
             return path
     return "ISCC.exe"
+
+
+def resolve_signtool() -> str:
+    candidates = [
+        r"C:\Program Files (x86)\Windows Kits\10\bin\x64\signtool.exe",
+        r"C:\Program Files\Windows Kits\10\bin\x64\signtool.exe",
+    ]
+    for path in candidates:
+        if Path(path).exists():
+            return path
+    return shutil.which("signtool.exe") or "signtool.exe"
+
+
+def ensure_iscc_available() -> str:
+    iscc = resolve_iscc()
+    if iscc == "ISCC.exe" and shutil.which("ISCC.exe") is None:
+        raise FileNotFoundError("ISCC bulunamadi. Inno Setup 6 kurulu mu?")
+    return iscc
+
+
+def ensure_signtool_available() -> str:
+    signtool = resolve_signtool()
+    if signtool == "signtool.exe" and shutil.which("signtool.exe") is None:
+        raise FileNotFoundError("signtool bulunamadi. Windows SDK kurulu mu?")
+    return signtool
+
+
+def verify_cert_password(cert_path: Path, cert_password: str) -> None:
+    if not cert_path.exists():
+        raise FileNotFoundError(f"Sertifika bulunamadi: {cert_path}")
+    certutil = shutil.which("certutil.exe") or "certutil.exe"
+    if certutil == "certutil.exe" and shutil.which("certutil.exe") is None:
+        raise FileNotFoundError("certutil bulunamadi. Windows araclari eksik olabilir.")
+
+    print("Sertifika sifresi kontrol ediliyor...")
+    result = subprocess.run(
+        [certutil, "-p", cert_password, "-dump", str(cert_path)],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        raise RuntimeError("Sertifika sifresi hatali veya PFX dosyasi gecersiz.")
+
+
+def sign_artifact(path: Path, cert_path: Path, cert_password: str, signtool: str) -> None:
+    if not cert_path.exists():
+        raise FileNotFoundError(f"Sertifika bulunamadi: {cert_path}")
+    if not path.exists():
+        raise FileNotFoundError(f"Imzalanacak dosya bulunamadi: {path}")
+
+    sign_cmd = [
+        signtool,
+        "sign",
+        "/f",
+        str(cert_path),
+        "/p",
+        cert_password,
+        "/fd",
+        "sha256",
+        "/tr",
+        "http://timestamp.digicert.com",
+        "/td",
+        "sha256",
+        str(path),
+    ]
+    display_cmd = sign_cmd.copy()
+    if "/p" in display_cmd:
+        pass_index = display_cmd.index("/p") + 1
+        if pass_index < len(display_cmd):
+            display_cmd[pass_index] = "****"
+    print("Sign komutu:", " ".join(display_cmd))
+    try:
+        subprocess.check_call(sign_cmd)
+    except subprocess.CalledProcessError as exc:
+        raise RuntimeError("Imzalama basarisiz. Sertifika sifresi veya PFX dosyasi hatali olabilir.") from exc
+
+
+def sign_publish_outputs(publish_dir: Path, cert_path: Path, cert_password: str, signtool: str) -> None:
+    if not publish_dir.exists():
+        raise FileNotFoundError(f"Publish klasoru bulunamadi: {publish_dir}")
+
+    targets = sorted(publish_dir.rglob("*.exe"))
+    if not targets:
+        raise FileNotFoundError("Imzalanacak exe bulunamadi.")
+
+    for target in targets:
+        sign_artifact(target, cert_path, cert_password, signtool)
+
 
 
 def build_iss_content(metadata: dict, app_id: str, publish_dir: Path) -> str:
@@ -76,7 +168,7 @@ Name: \"turkish\"; MessagesFile: \"compiler:Languages\\Turkish.isl\"
 Name: \"english\"; MessagesFile: \"compiler:Default.isl\"
 
 [Tasks]
-Name: \"desktopicon\"; Description: \"Masaüstü kısayolu oluştur\"; GroupDescription: \"Ek görevler\"; Flags: unchecked
+Name: \"desktopicon\"; Description: \"Masaüstü kısayolu oluştur\"; GroupDescription: \"Ek görevler\"
 
 [Files]
 Source: \"{publish_dir.as_posix().replace('/', '\\')}\\*\"; DestDir: \"{{app}}\"; Flags: ignoreversion recursesubdirs createallsubdirs
@@ -99,7 +191,10 @@ def main() -> int:
     parser.add_argument("--app-id", default="")
     parser.add_argument("--skip-publish", action="store_true")
     parser.add_argument("--skip-installer", action="store_true")
+    parser.add_argument("--cert", default="", help="PFX sertifika yolu")
+    parser.add_argument("--cert-pass", default="", help="PFX sertifika sifresi")
     args = parser.parse_args()
+
 
     repo_root = Path.cwd()
     csproj_path = repo_root / args.csproj
@@ -109,6 +204,22 @@ def main() -> int:
 
     metadata = read_csproj_metadata(csproj_path)
     publish_dir = repo_root / "bin" / args.configuration / "net8.0-windows10.0.19041.0" / args.runtime / "publish"
+
+    if args.cert and not args.cert_pass:
+        print("Sertifika sifresi (--cert-pass) gerekli.")
+        return 1
+
+    try:
+        iscc = ensure_iscc_available()
+        signtool = None
+        cert_path = None
+        if args.cert:
+            cert_path = Path(args.cert)
+            signtool = ensure_signtool_available()
+            verify_cert_password(cert_path, args.cert_pass)
+    except (FileNotFoundError, RuntimeError) as exc:
+        print(exc)
+        return 1
 
     if not args.skip_publish:
         publish_cmd = [
@@ -130,12 +241,28 @@ def main() -> int:
     iss_path.write_text(iss_content, encoding="utf-8")
     print(f"ISS olusturuldu: {iss_path}")
 
+
+    if args.cert:
+        try:
+            sign_publish_outputs(publish_dir, cert_path, args.cert_pass, signtool)
+        except (FileNotFoundError, RuntimeError) as exc:
+            print(exc)
+            return 1
+
     if not args.skip_installer:
-        iscc = resolve_iscc()
         print(f"ISCC: {iscc}")
         subprocess.check_call([iscc, str(iss_path)])
 
+    if args.cert:
+        setup_exe = repo_root / "Output" / "DualAutoClicker-Setup.exe"
+        try:
+            sign_artifact(setup_exe, cert_path, args.cert_pass, signtool)
+        except (FileNotFoundError, RuntimeError) as exc:
+            print(exc)
+            return 1
+
     return 0
+
 
 
 if __name__ == "__main__":

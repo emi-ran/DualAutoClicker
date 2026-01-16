@@ -1,6 +1,10 @@
 using Microsoft.UI.Xaml;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using Microsoft.UI.Xaml.Controls;
 using DualAutoClicker.Native;
+
 
 namespace DualAutoClicker.Views;
 
@@ -9,16 +13,29 @@ public sealed class WindowPickerDialog : ContentDialog
     private readonly CheckBox _allAppsCheckBox;
     private readonly ListView _windowListView;
     private readonly List<WindowInfo> _windows = new();
+    private readonly HashSet<string> _initialSelections = new(StringComparer.OrdinalIgnoreCase);
 
     public bool AllApps => _allAppsCheckBox.IsChecked == true;
     public List<string> SelectedProcesses { get; } = new();
 
-    public WindowPickerDialog()
+    public WindowPickerDialog(IEnumerable<string>? selectedProcesses = null, bool allApps = true)
     {
+
         this.Title = "Uygulamalar";
         this.PrimaryButtonText = "Tamam";
         this.CloseButtonText = "İptal";
         this.DefaultButton = ContentDialogButton.Primary;
+
+        if (selectedProcesses != null)
+        {
+            foreach (var process in selectedProcesses)
+            {
+                if (!string.IsNullOrWhiteSpace(process))
+                {
+                    _initialSelections.Add(process.Trim());
+                }
+            }
+        }
 
         // Build content
         var mainPanel = new StackPanel { Spacing = 16, MinWidth = 400 };
@@ -27,9 +44,10 @@ public sealed class WindowPickerDialog : ContentDialog
         _allAppsCheckBox = new CheckBox
         {
             Content = "Tüm uygulamalarda aktif et",
-            IsChecked = true,
+            IsChecked = allApps,
             FontWeight = Microsoft.UI.Text.FontWeights.Bold
         };
+
         _allAppsCheckBox.Checked += AllAppsCheckBox_Changed;
         _allAppsCheckBox.Unchecked += AllAppsCheckBox_Changed;
         mainPanel.Children.Add(_allAppsCheckBox);
@@ -39,10 +57,13 @@ public sealed class WindowPickerDialog : ContentDialog
         {
             Height = 300,
             SelectionMode = ListViewSelectionMode.Multiple,
-            IsEnabled = false
+            IsEnabled = !allApps
         };
         _windowListView.ItemTemplate = CreateItemTemplate();
         mainPanel.Children.Add(_windowListView);
+
+        AllAppsCheckBox_Changed(_allAppsCheckBox, new RoutedEventArgs());
+
 
         this.Content = mainPanel;
 
@@ -88,7 +109,19 @@ public sealed class WindowPickerDialog : ContentDialog
         }
 
         _windowListView.ItemsSource = _windows;
+
+        if (_initialSelections.Count > 0)
+        {
+            var selections = _windows
+                .Where(window => _initialSelections.Contains(window.ProcessName))
+                .ToList();
+            foreach (var window in selections)
+            {
+                _windowListView.SelectedItems.Add(window);
+            }
+        }
     }
+
 
     private void AllAppsCheckBox_Changed(object sender, RoutedEventArgs e)
     {
@@ -98,7 +131,18 @@ public sealed class WindowPickerDialog : ContentDialog
         {
             _windowListView.SelectedItems.Clear();
         }
+        else if (_windowListView.SelectedItems.Count == 0 && _initialSelections.Count > 0)
+        {
+            var selections = _windows
+                .Where(window => _initialSelections.Contains(window.ProcessName))
+                .ToList();
+            foreach (var window in selections)
+            {
+                _windowListView.SelectedItems.Add(window);
+            }
+        }
     }
+
 
     private void OnPrimaryButtonClicked(ContentDialog sender, ContentDialogButtonClickEventArgs args)
     {

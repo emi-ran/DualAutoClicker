@@ -34,6 +34,17 @@ public sealed partial class SettingsPanel : UserControl
         MasterToggleCheckBox.IsChecked = settings.MasterToggle.Enabled;
         MasterKeyLabel.Text = settings.MasterToggle.KeyName;
 
+        if (!settings.MasterToggle.Enabled)
+        {
+            App.ClickerService.SetMasterEnabled(true);
+            UpdateMasterVisualState(true);
+        }
+        else
+        {
+            UpdateMasterVisualState(App.ClickerService.MasterEnabled);
+        }
+
+
         var window = settings.WindowTarget;
         WindowStatusLabel.Text = window.Enabled && !string.IsNullOrEmpty(window.ProcessName)
             ? $"{window.ProcessName.Split(',').Length} uygulama seçili"
@@ -44,16 +55,43 @@ public sealed partial class SettingsPanel : UserControl
 
     public void UpdateMasterState(bool enabled)
     {
-        // Could update visual state based on master enabled/disabled
+        UpdateMasterVisualState(enabled);
     }
+
+    private void UpdateMasterVisualState(bool enabled)
+    {
+        var brushKey = enabled ? "AccentOrangeBrush" : "AccentRedBrush";
+        var colorKey = enabled ? "AccentOrangeColor" : "AccentRedColor";
+
+        var brush = (Brush)Application.Current.Resources[brushKey];
+        var color = (Color)Application.Current.Resources[colorKey];
+
+        MasterKeyLabel.Foreground = brush;
+        MasterKeyButton.Background = new SolidColorBrush(color);
+        MasterKeyButton.Content = enabled ? "Seç" : "Durdu";
+        MasterKeyButton.IsEnabled = enabled;
+    }
+
 
     private void MasterToggleCheckBox_Changed(object sender, RoutedEventArgs e)
     {
         if (_settingsService == null) return;
 
-        _settingsService.Settings.MasterToggle.Enabled = MasterToggleCheckBox.IsChecked == true;
+        bool enabled = MasterToggleCheckBox.IsChecked == true;
+        _settingsService.Settings.MasterToggle.Enabled = enabled;
         _settingsService.Save();
+
+        if (!enabled)
+        {
+            App.ClickerService.SetMasterEnabled(true);
+            UpdateMasterVisualState(true);
+        }
+        else
+        {
+            UpdateMasterVisualState(App.ClickerService.MasterEnabled);
+        }
     }
+
 
     private void MasterKeyButton_Click(object sender, RoutedEventArgs e)
     {
@@ -155,10 +193,13 @@ public sealed partial class SettingsPanel : UserControl
     {
         if (_settingsService == null) return;
 
-        var dialog = new WindowPickerDialog
+        var windowSettings = _settingsService.Settings.WindowTarget;
+        var selectedProcesses = windowSettings.ProcessName.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var dialog = new WindowPickerDialog(selectedProcesses, !windowSettings.Enabled)
         {
             XamlRoot = this.XamlRoot
         };
+
 
         var result = await dialog.ShowAsync();
 
