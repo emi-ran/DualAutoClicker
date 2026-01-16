@@ -19,7 +19,7 @@ Bağımsız sol ve sağ tık ayarlarına sahip, 6 profil destekli, yüksek perfo
 - **⏸️ Master Kontrol** - Tek bir tuşla tüm sistemi anında donduran acil durum anahtarı.
 - **🪟 Uygulama Hedefleme** - Tıklayıcının sadece seçtiğiniz uygulama penceresinde çalışmasını sağlar.
 - **🚀 Windows Başlangıcı** - Windows açıldığında otomatik olarak arka planda başlar.
-- **📌 Akıllı Tray Sistemi** - Küçültüldüğünde tepsisinde çalışır, ikonu makro durumuna göre renk değiştirir.
+
 
 ## 📥 Kurulum
 
@@ -69,12 +69,6 @@ Uygulamanın üst kısmında 6 profil bulunur. Her profil kendi ayarlarını sak
 - **MASTER KONTROL**: Tüm makroları anında devre dışı bırakmak için bir global kısayol atayın.
 - **UYGULAMA SEÇ**: Makronun sadece belirli uygulamalarda çalışmasını sağlayın.
 
-### Sistem Tepsisi
-
-- Uygulama küçültüldüğünde saatin yanına gider.
-- **Yeşil ikon**: Makro aktif olarak tıklama yapıyor.
-- **Mavi ikon**: Makro hazır, beklemede.
-- **Gri ikon**: Master kontrol ile devre dışı.
 
 ## 📄 Lisans
 
