@@ -17,10 +17,14 @@
     <!-- Application info -->
     <ApplicationIcon>Assets\icon.ico</ApplicationIcon>
     <AssemblyName>DualAutoClicker</AssemblyName>
-    <Version>2.0.0</Version>
+    <Version>3.0.0</Version>
     <Company>DualAutoClicker</Company>
     <Product>Dual AutoClicker</Product>
     <Description>High-performance dual autoclicker with independent left/right click settings - WinUI 3</Description>
+
+    <!-- Publish settings -->
+    <DebugType>none</DebugType>
+    <PublishTrimmed>false</PublishTrimmed>
 
     <!-- Windows App SDK -->
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>

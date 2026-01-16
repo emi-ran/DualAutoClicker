@@ -33,7 +33,9 @@ packages/
 .DS_Store
 Thumbs.db
 desktop.ini
+nul
 
 # Certificates
 *.pfx
 *.cer
+
