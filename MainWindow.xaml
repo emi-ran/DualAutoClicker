@@ -59,19 +59,20 @@
         </Grid>
 
         <!-- Main Content -->
-        <Grid x:Name="MainContent" Grid.Row="1" Padding="24">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <Grid x:Name="MainContent" Padding="16">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-            <!-- Clicker Panels Row -->
-            <Grid Grid.Row="0" Margin="0,0,0,24">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="24"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
+                <!-- Clicker Panels Row -->
+                <Grid Grid.Row="0" Margin="0,0,0,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
 
                 <!-- Left Click Panel -->
                 <controls:ClickerPanel x:Name="LeftClickPanel" 
@@ -95,5 +96,6 @@
             <!-- Settings Panel -->
             <controls:SettingsPanel x:Name="SettingsPanel" Grid.Row="1"/>
         </Grid>
+        </ScrollViewer>
     </Grid>
 </Window>

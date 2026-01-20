@@ -11,10 +11,10 @@
     <Border x:Name="CardBorder" 
             Background="{StaticResource BgCardBrush}" 
             CornerRadius="{StaticResource MediumRadius}"
-            Padding="20"
+            Padding="16,12"
             BorderThickness="0,3,0,0">
         
-        <Grid RowSpacing="20" VerticalAlignment="Center">
+        <Grid RowSpacing="16" VerticalAlignment="Top">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>

@@ -5,8 +5,7 @@ Bağımsız sol ve sağ tık ayarlarına sahip, 6 profil destekli, yüksek perfo
 ![Platform](https://img.shields.io/badge/Platform-Windows-blue)
 ![.NET](https://img.shields.io/badge/.NET-8.0-purple)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Version](https://img.shields.io/badge/Version-3.0.0-orange)
-
+![Version](https://img.shields.io/badge/Version-3.1.0-orange)
 
 ## ✨ Özellikler
 
@@ -20,7 +19,6 @@ Bağımsız sol ve sağ tık ayarlarına sahip, 6 profil destekli, yüksek perfo
 - **🪟 Uygulama Hedefleme** - Tıklayıcının sadece seçtiğiniz uygulama penceresinde çalışmasını sağlar.
 - **🚀 Windows Başlangıcı** - Windows açıldığında otomatik olarak arka planda başlar.
 
-
 ## 📥 Kurulum
 
 ### Gereksinimler
@@ -29,8 +27,6 @@ Bağımsız sol ve sağ tık ayarlarına sahip, 6 profil destekli, yüksek perfo
 - [.NET 8.0 Runtime](https://dotnet.microsoft.com/download/dotnet/8.0)
 - Inno Setup 6 (installer üretmek için)
 - Windows SDK (signtool ile imzalama için)
-
-
 
 ### Hızlı Başlat
 
@@ -51,12 +47,11 @@ python build_installer.py --cert Cert.pfx --cert-pass Certpass
 ```
 
 Bu komut:
+
 - `dotnet publish` ile `publish` klasörünü üretir.
 - `installer.iss` dosyasını `.csproj` içinden otomatik oluşturur.
 - Inno Setup ile `DualAutoClicker-Setup.exe` kurulum dosyasını üretir.
 - Sertifika verildiyse yayınlanan exe ve kurulum dosyasını imzalar.
-
-
 
 ## 🎮 Kullanım
 
@@ -78,7 +73,6 @@ Uygulamanın üst kısmında 6 profil bulunur. Her profil kendi ayarlarını sak
 
 - **MASTER KONTROL**: Tüm makroları anında devre dışı bırakmak için bir global kısayol atayın.
 - **UYGULAMA SEÇ**: Makronun sadece belirli uygulamalarda çalışmasını sağlayın.
-
 
 ## 📄 Lisans
 

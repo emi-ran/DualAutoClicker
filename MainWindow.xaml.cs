@@ -127,8 +127,10 @@ public sealed partial class MainWindow : Window
 
     private void ConfigureWindow()
     {
-        // Set initial size (wider and taller to fit content without scrolling)
-        _appWindow.Resize(new SizeInt32(850, 650));
+        // Set initial size - must be wide enough for both panels
+        int windowWidth = 920;
+        int windowHeight = 650;
+        _appWindow.Resize(new SizeInt32(windowWidth, windowHeight));
         
         // Set window icon
         var iconPath = System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "icon.ico");
@@ -140,8 +142,8 @@ public sealed partial class MainWindow : Window
         // Center window on screen
         var displayArea = DisplayArea.GetFromWindowId(_appWindow.Id, DisplayAreaFallback.Primary);
         var workArea = displayArea.WorkArea;
-        var x = (workArea.Width - 720) / 2;
-        var y = (workArea.Height - 520) / 2;
+        var x = (workArea.Width - windowWidth) / 2;
+        var y = (workArea.Height - windowHeight) / 2;
         _appWindow.Move(new PointInt32(x, y));
 
         // Set title
