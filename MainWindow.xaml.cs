@@ -268,6 +268,9 @@ public sealed partial class MainWindow : Window
         // Load right click settings
         RightClickPanel.LoadSettings(_settingsService.Settings.RightClick);
 
+        // Load macro settings
+        MacroPanel.LoadSettings(_settingsService);
+
         // Load general settings
         SettingsPanel.LoadSettings(_settingsService);
         RootGrid.Opacity = _clickerService.MasterEnabled ? 1.0 : 0.5;

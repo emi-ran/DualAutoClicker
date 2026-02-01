@@ -42,6 +42,43 @@ public class KeyboardHook : IDisposable
     private IntPtr _hookId = IntPtr.Zero;
     private bool _disposed;
 
+    // Modifier key states
+    private bool _isAltDown;
+    private bool _isShiftDown;
+    private bool _isCtrlDown;
+
+    // VK codes for modifiers
+    private const int VK_SHIFT = 0x10;
+    private const int VK_CONTROL = 0x11;
+    private const int VK_MENU = 0x12; // Alt
+    private const int VK_LSHIFT = 0xA0;
+    private const int VK_RSHIFT = 0xA1;
+    private const int VK_LCONTROL = 0xA2;
+    private const int VK_RCONTROL = 0xA3;
+    private const int VK_LMENU = 0xA4; // Left Alt
+    private const int VK_RMENU = 0xA5; // Right Alt
+
+    /// <summary>
+    /// Current state of Alt modifier
+    /// </summary>
+    public bool IsAltDown => _isAltDown;
+
+    /// <summary>
+    /// Current state of Shift modifier
+    /// </summary>
+    public bool IsShiftDown => _isShiftDown;
+
+    /// <summary>
+    /// Current state of Ctrl modifier
+    /// </summary>
+    public bool IsCtrlDown => _isCtrlDown;
+
+    /// <summary>
+    /// Fired when any key state changes. Parameters: (VK code, isDown)
+    /// Returns true to suppress (block) the key from reaching other applications
+    /// </summary>
+    public event Func<int, bool, bool>? KeyStateChangedWithSuppress;
+
     /// <summary>
     /// Fired when any key state changes. Parameters: (VK code, isDown)
     /// </summary>
@@ -85,6 +122,12 @@ public class KeyboardHook : IDisposable
             bool isDown = wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN;
             bool isUp = wParam == WM_KEYUP || wParam == WM_SYSKEYUP;
 
+            // Track modifier key states
+            if (isDown || isUp)
+            {
+                UpdateModifierState(vkCode, isDown);
+            }
+
             if (isDown)
             {
                 KeyPressed?.Invoke(vkCode, GetKeyName(vkCode));
@@ -92,11 +135,56 @@ public class KeyboardHook : IDisposable
 
             if (isDown || isUp)
             {
+                // Check if any subscriber wants to suppress this key
+                bool shouldSuppress = KeyStateChangedWithSuppress?.Invoke(vkCode, isDown) ?? false;
+                
+                if (shouldSuppress)
+                {
+                    // Return non-zero to block the key from reaching other applications
+                    return (IntPtr)1;
+                }
+
                 KeyStateChanged?.Invoke(vkCode, isDown);
             }
         }
 
         return CallNextHookEx(_hookId, nCode, wParam, lParam);
+    }
+
+    private void UpdateModifierState(int vkCode, bool isDown)
+    {
+        switch (vkCode)
+        {
+            case VK_MENU:
+            case VK_LMENU:
+            case VK_RMENU:
+                _isAltDown = isDown;
+                break;
+            case VK_SHIFT:
+            case VK_LSHIFT:
+            case VK_RSHIFT:
+                _isShiftDown = isDown;
+                break;
+            case VK_CONTROL:
+            case VK_LCONTROL:
+            case VK_RCONTROL:
+                _isCtrlDown = isDown;
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Checks if a VK code is a modifier key (Alt, Shift, Ctrl)
+    /// </summary>
+    public static bool IsModifierKey(int vkCode)
+    {
+        return vkCode switch
+        {
+            0x12 or 0xA4 or 0xA5 => true, // Alt
+            0x10 or 0xA0 or 0xA1 => true, // Shift
+            0x11 or 0xA2 or 0xA3 => true, // Ctrl
+            _ => false
+        };
     }
 
     public static string GetKeyName(int vkCode)

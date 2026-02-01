@@ -64,6 +64,7 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
                 <!-- Clicker Panels Row -->
@@ -93,8 +94,11 @@
                                        VerticalAlignment="Stretch"/>
             </Grid>
 
+            <!-- Macro Panel -->
+            <controls:MacroPanel x:Name="MacroPanel" Grid.Row="1" Margin="0,0,0,16"/>
+
             <!-- Settings Panel -->
-            <controls:SettingsPanel x:Name="SettingsPanel" Grid.Row="1"/>
+            <controls:SettingsPanel x:Name="SettingsPanel" Grid.Row="2"/>
         </Grid>
         </ScrollViewer>
     </Grid>

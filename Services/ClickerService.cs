@@ -11,6 +11,7 @@ public class ClickerService : IDisposable
     private readonly MouseHook _mouseHook;
     private readonly KeyboardHook _keyboardHook;
     private readonly SettingsService _settingsService;
+    private readonly KeyboardMacroService _macroService;
 
     private readonly PrecisionClicker _leftClicker;
     private readonly PrecisionClicker _rightClicker;
@@ -53,6 +54,7 @@ public class ClickerService : IDisposable
     public ClickerService(SettingsService settingsService)
     {
         _settingsService = settingsService;
+        _macroService = new KeyboardMacroService();
 
         _mouseHook = new MouseHook();
         _keyboardHook = new KeyboardHook();
@@ -66,8 +68,8 @@ public class ClickerService : IDisposable
         _mouseHook.XButton2StateChanged += isDown => OnMouseButtonStateChanged(5, isDown);
         _mouseHook.MiddleButtonStateChanged += isDown => OnMouseButtonStateChanged(3, isDown);
 
-        // Wire up keyboard hook events
-        _keyboardHook.KeyStateChanged += OnKeyboardStateChanged;
+        // Wire up keyboard hook events with suppression support
+        _keyboardHook.KeyStateChangedWithSuppress += OnKeyboardStateChangedWithSuppress;
 
         // Apply window targeting settings
         UpdateWindowTargeting();
@@ -116,6 +118,20 @@ public class ClickerService : IDisposable
 
         var leftSettings = _settingsService.Settings.LeftClick;
         var rightSettings = _settingsService.Settings.RightClick;
+        var macroSettings = _settingsService.Settings.KeyboardMacro;
+
+        // Check keyboard macro activation (with modifier support for mouse too)
+        if (macroSettings.Enabled && macroSettings.KeyType == "mouse" && macroSettings.KeyCode == buttonCode)
+        {
+            // Check if required modifiers are pressed
+            bool modifiersMatch = CheckMacroModifiers(macroSettings);
+            
+            if (isDown && modifiersMatch)
+            {
+                _macroService.ExecuteMacro(macroSettings);
+            }
+            return;
+        }
 
         // Check left click activation
         if (leftSettings.Enabled && leftSettings.KeyType == "mouse" && leftSettings.KeyCode == buttonCode)
@@ -132,20 +148,42 @@ public class ClickerService : IDisposable
         }
     }
 
-    private void OnKeyboardStateChanged(int vkCode, bool isDown)
+    /// <summary>
+    /// Handles keyboard state changes with support for key suppression
+    /// Returns true if the key should be suppressed (blocked from other apps)
+    /// </summary>
+    private bool OnKeyboardStateChangedWithSuppress(int vkCode, bool isDown)
     {
         // Check master toggle
         var masterSettings = _settingsService.Settings.MasterToggle;
         if (masterSettings.Enabled && masterSettings.KeyType == "keyboard" && masterSettings.KeyCode == vkCode)
         {
             if (isDown) ToggleMaster();
-            return;
+            return false; // Don't suppress master toggle key
         }
 
-        if (!_masterEnabled) return;
+        if (!_masterEnabled) return false;
 
         var leftSettings = _settingsService.Settings.LeftClick;
         var rightSettings = _settingsService.Settings.RightClick;
+        var macroSettings = _settingsService.Settings.KeyboardMacro;
+
+        // Check keyboard macro activation (with modifier support)
+        if (macroSettings.Enabled && macroSettings.KeyType == "keyboard" && macroSettings.KeyCode == vkCode)
+        {
+            // Check if required modifiers are pressed
+            bool modifiersMatch = CheckMacroModifiers(macroSettings);
+            
+            if (modifiersMatch)
+            {
+                if (isDown)
+                {
+                    _macroService.ExecuteMacro(macroSettings);
+                }
+                // Suppress this key so it doesn't type in the application
+                return true;
+            }
+        }
 
         // Check left click activation
         if (leftSettings.Enabled && leftSettings.KeyType == "keyboard" && leftSettings.KeyCode == vkCode)
@@ -160,6 +198,8 @@ public class ClickerService : IDisposable
             HandleActivation(isDown, rightSettings.Mode, ref _rightToggleState,
                 () => StartRightClicking(rightSettings.Cps, rightSettings.RandomPercent), StopRightClicking);
         }
+
+        return false; // Don't suppress other keys
     }
 
     private void ToggleMaster()
@@ -176,6 +216,33 @@ public class ClickerService : IDisposable
         }
 
         MasterStateChanged?.Invoke(_masterEnabled);
+    }
+
+    /// <summary>
+    /// Checks if required modifier keys for macro are currently pressed
+    /// </summary>
+    private bool CheckMacroModifiers(KeyboardMacroSettings macroSettings)
+    {
+        // If Alt is required, check if Alt is down
+        if (macroSettings.RequireAlt && !_keyboardHook.IsAltDown)
+            return false;
+
+        // If Shift is required, check if Shift is down
+        if (macroSettings.RequireShift && !_keyboardHook.IsShiftDown)
+            return false;
+
+        // If Ctrl is required, check if Ctrl is down
+        if (macroSettings.RequireCtrl && !_keyboardHook.IsCtrlDown)
+            return false;
+
+        // If no modifiers required, make sure none are pressed (exact match)
+        if (!macroSettings.RequireAlt && !macroSettings.RequireShift && !macroSettings.RequireCtrl)
+        {
+            // Allow activation without any modifiers
+            return true;
+        }
+
+        return true;
     }
 
     public void SetMasterEnabled(bool enabled)
