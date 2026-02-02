@@ -1,5 +1,27 @@
 # Changelog
 
+## [3.2.1] - 2026-02-02
+
+### Duzeltmeler
+
+#### Makro Tekrarli Calisma Hatasi
+- Makro aktivasyon tusu basili tutuldugunda makronun surekli tekrar etmesi sorunu giderildi
+- Artik makro sadece ilk tus basilisinda bir kez calisir
+- Klavye ve fare aktivasyonlari icin ayri durum takibi eklendi (`_macroKeyDown`, `_macroMouseDown`)
+
+#### Modifier Tus Yutma Eksikligi
+- Makro aktivasyonunda modifier tuslarinin (Alt, Shift, Ctrl) diger uygulamalara iletilmesi sorunu giderildi
+- Ornegin `Alt+3` makrosu calistirildiginda Alt tusu artik oyun menusunu acmiyor
+- Modifier durum takibi eklendi (`_suppressAlt`, `_suppressShift`, `_suppressCtrl`)
+
+### Teknik Degisiklikler
+
+#### Degistirilen Dosyalar
+- `Services/ClickerService.cs`:
+  - Makro debounce mantigi eklendi (satir 214-233)
+  - Modifier tus bastirma mantigi eklendi (satir 176-212)
+  - Yeni durum takip alanlari: `_macroKeyDown`, `_macroMouseDown`, `_suppressAlt`, `_suppressShift`, `_suppressCtrl`
+
 ## [3.2.0] - 2026-02-01
 
 ### Eklenen Ozellikler

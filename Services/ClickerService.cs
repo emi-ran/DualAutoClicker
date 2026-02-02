@@ -24,6 +24,15 @@ public class ClickerService : IDisposable
     // Master toggle state
     private bool _masterEnabled = true;
 
+    // Macro state tracking (prevents repeated execution on key hold)
+    private bool _macroKeyDown;
+    private bool _macroMouseDown;
+    
+    // Modifier suppression tracking (for active macro activation)
+    private bool _suppressAlt;
+    private bool _suppressShift;
+    private bool _suppressCtrl;
+
     private bool _disposed;
 
     /// <summary>
@@ -126,9 +135,18 @@ public class ClickerService : IDisposable
             // Check if required modifiers are pressed
             bool modifiersMatch = CheckMacroModifiers(macroSettings);
             
-            if (isDown && modifiersMatch)
+            if (modifiersMatch)
             {
-                _macroService.ExecuteMacro(macroSettings);
+                // Only execute on initial button press, not on repeat
+                if (isDown && !_macroMouseDown)
+                {
+                    _macroMouseDown = true;
+                    _macroService.ExecuteMacro(macroSettings);
+                }
+                else if (!isDown)
+                {
+                    _macroMouseDown = false;
+                }
             }
             return;
         }
@@ -168,6 +186,47 @@ public class ClickerService : IDisposable
         var rightSettings = _settingsService.Settings.RightClick;
         var macroSettings = _settingsService.Settings.KeyboardMacro;
 
+        // Check if this is a modifier key that should be suppressed (part of active macro)
+        if (KeyboardHook.IsModifierKey(vkCode))
+        {
+            // Suppress modifier keys while macro activation is active
+            if (macroSettings.Enabled && macroSettings.KeyCode != 0)
+            {
+                bool isAlt = vkCode == 0x12 || vkCode == 0xA4 || vkCode == 0xA5;
+                bool isShift = vkCode == 0x10 || vkCode == 0xA0 || vkCode == 0xA1;
+                bool isCtrl = vkCode == 0x11 || vkCode == 0xA2 || vkCode == 0xA3;
+
+                // Track modifier state for suppression
+                if (isDown)
+                {
+                    if (isAlt && macroSettings.RequireAlt) _suppressAlt = true;
+                    if (isShift && macroSettings.RequireShift) _suppressShift = true;
+                    if (isCtrl && macroSettings.RequireCtrl) _suppressCtrl = true;
+                }
+                else
+                {
+                    // On key up, check if we should suppress and reset
+                    bool shouldSuppress = false;
+                    if (isAlt && _suppressAlt) { _suppressAlt = false; shouldSuppress = true; }
+                    if (isShift && _suppressShift) { _suppressShift = false; shouldSuppress = true; }
+                    if (isCtrl && _suppressCtrl) { _suppressCtrl = false; shouldSuppress = true; }
+                    
+                    if (shouldSuppress) return true;
+                }
+
+                // Suppress modifier keydown if it's required for macro
+                if (isDown)
+                {
+                    if ((isAlt && macroSettings.RequireAlt) ||
+                        (isShift && macroSettings.RequireShift) ||
+                        (isCtrl && macroSettings.RequireCtrl))
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+
         // Check keyboard macro activation (with modifier support)
         if (macroSettings.Enabled && macroSettings.KeyType == "keyboard" && macroSettings.KeyCode == vkCode)
         {
@@ -176,13 +235,25 @@ public class ClickerService : IDisposable
             
             if (modifiersMatch)
             {
-                if (isDown)
+                // Only execute on initial keydown, not on repeat
+                if (isDown && !_macroKeyDown)
                 {
+                    _macroKeyDown = true;
                     _macroService.ExecuteMacro(macroSettings);
+                }
+                else if (!isDown)
+                {
+                    _macroKeyDown = false;
                 }
                 // Suppress this key so it doesn't type in the application
                 return true;
             }
+        }
+
+        // Reset macro key state if modifiers no longer match
+        if (!isDown && _macroKeyDown && macroSettings.KeyCode == vkCode)
+        {
+            _macroKeyDown = false;
         }
 
         // Check left click activation
