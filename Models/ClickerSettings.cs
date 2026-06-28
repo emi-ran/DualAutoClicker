@@ -113,8 +113,7 @@ public class ProfileSettings
             WindowTarget = new WindowTargetSettings
             {
                 Enabled = false,
-                ProcessName = "",
-                WindowTitle = ""
+                ProcessName = ""
             },
             KeyboardMacro = new KeyboardMacroSettings
             {
@@ -190,7 +189,6 @@ public class WindowTargetSettings
 {
     public bool Enabled { get; set; } = false;
     public string ProcessName { get; set; } = "";
-    public string WindowTitle { get; set; } = "";
 }
 
 /// <summary>

@@ -5,7 +5,7 @@ Bağımsız sol ve sağ tık ayarlarına sahip, 6 profil destekli, yüksek perfo
 ![Platform](https://img.shields.io/badge/Platform-Windows-blue)
 ![.NET](https://img.shields.io/badge/.NET-8.0-purple)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Version](https://img.shields.io/badge/Version-3.1.0-orange)
+![Version](https://img.shields.io/badge/Version-3.2.2-orange)
 
 ## ✨ Özellikler
 
@@ -66,7 +66,7 @@ Uygulamanın üst kısmında 6 profil bulunur. Her profil kendi ayarlarını sak
 
 - **SOL/SAĞ TIK**: İstediğiniz tarafı etkinleştirin.
 - **DEĞİŞTİR**: Aktivasyon tuşunu belirleyin (Klavye veya Mouse).
-- **MOD**: Makronun basılı tutunca mı yoksa Toggle (tıkla-başlat/tıkla-durdur) şeklinde mi çalışacağını seçin.
+- **MOD**: Makronun basılı tutunca mı yoksa Aç/Kapat (tıkla-başlat/tıkla-durdur) şeklinde mi çalışacağını seçin.
 - **CPS & RND**: Tıklama hızını ve rastgelelik oranını belirleyin.
 
 ### Gelişmiş Ayarlar

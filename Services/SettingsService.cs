@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json;
 using DualAutoClicker.Models;
 
@@ -52,9 +53,9 @@ public class SettingsService
                 }
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // If any error, use defaults
+            Debug.WriteLine($"Settings load failed, defaults will be used: {ex}");
             _settings = new ClickerSettings();
         }
     }
@@ -72,9 +73,9 @@ public class SettingsService
             var json = JsonSerializer.Serialize(_settings, JsonOptions);
             File.WriteAllText(SettingsFilePath, json);
         }
-        catch
+        catch (Exception ex)
         {
-            // Silently fail - settings are not critical
+            Debug.WriteLine($"Settings save failed: {ex}");
         }
     }
 

@@ -70,14 +70,9 @@ public static class InputSimulator
     [DllImport("user32.dll")]
     private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
 
-    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
-    private static extern int GetWindowText(IntPtr hWnd, System.Text.StringBuilder lpString, int nMaxCount);
-
     // Static fields for window targeting
     public static bool WindowTargetEnabled { get; set; }
     public static string TargetProcessName { get; set; } = "";
-    public static string TargetWindowTitle { get; set; } = "";
-
     /// <summary>
     /// Check if our application window is in foreground
     /// </summary>
@@ -98,30 +93,24 @@ public static class InputSimulator
         var foregroundWindow = GetForegroundWindow();
 
         // Check by process name
-        if (!string.IsNullOrEmpty(TargetProcessName))
+        if (!string.IsNullOrWhiteSpace(TargetProcessName))
         {
             GetWindowThreadProcessId(foregroundWindow, out uint processId);
             try
             {
                 var process = Process.GetProcessById((int)processId);
-                if (!process.ProcessName.Equals(TargetProcessName, StringComparison.OrdinalIgnoreCase))
+                var allowedProcesses = TargetProcessName
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+                if (allowedProcesses.Length > 0 &&
+                    !allowedProcesses.Contains(process.ProcessName, StringComparer.OrdinalIgnoreCase))
                 {
                     return false;
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                return false;
-            }
-        }
-
-        // Check by window title
-        if (!string.IsNullOrEmpty(TargetWindowTitle))
-        {
-            var sb = new System.Text.StringBuilder(256);
-            GetWindowText(foregroundWindow, sb, sb.Capacity);
-            if (!sb.ToString().Contains(TargetWindowTitle, StringComparison.OrdinalIgnoreCase))
-            {
+                Debug.WriteLine($"Target process check failed: {ex}");
                 return false;
             }
         }

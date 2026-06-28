@@ -96,7 +96,7 @@
                                  Foreground="{StaticResource TextPrimaryBrush}"
                                  Checked="ModeRadio_Changed"/>
                     <RadioButton x:Name="ToggleRadio" 
-                                 Content="Toggle" 
+                                 Content="Aç/Kapat" 
                                  Foreground="{StaticResource TextPrimaryBrush}"
                                  Checked="ModeRadio_Changed"/>
                 </StackPanel>

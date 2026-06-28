@@ -62,7 +62,10 @@ public static class WindowEnumerator
                 var process = Process.GetProcessById((int)processId);
                 processName = process.ProcessName;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Window enumeration skipped process {processId}: {ex}");
+            }
 
             // Skip our own window
             if (processId == Environment.ProcessId) return true;

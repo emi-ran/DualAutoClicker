@@ -11,9 +11,7 @@ namespace DualAutoClicker.Controls;
 public sealed partial class MacroPanel : UserControl
 {
     private KeyboardMacroSettings? _settings;
-    private bool _isBinding = false;
-    private MouseHook? _bindingMouseHook;
-    private KeyboardHook? _bindingKeyboardHook;
+    private readonly KeyBindingCapture _keyBindingCapture = new();
 
     public MacroPanel()
     {
@@ -48,7 +46,7 @@ public sealed partial class MacroPanel : UserControl
 
     private void ChangeKeyButton_Click(object sender, RoutedEventArgs e)
     {
-        if (_isBinding)
+        if (_keyBindingCapture.IsActive)
         {
             StopKeyBinding();
             return;
@@ -59,40 +57,14 @@ public sealed partial class MacroPanel : UserControl
 
     private void StartKeyBinding()
     {
-        _isBinding = true;
         ChangeKeyButton.Content = "...";
         ChangeKeyButton.Background = new SolidColorBrush(Color.FromArgb(255, 180, 130, 0));
-
-        _bindingMouseHook = new MouseHook();
-        _bindingKeyboardHook = new KeyboardHook();
-
-        _bindingMouseHook.MouseButtonPressed += OnBindingMousePressed;
-        _bindingKeyboardHook.KeyPressed += OnBindingKeyPressed;
-
-        _bindingMouseHook.Install();
-        _bindingKeyboardHook.Install();
+        _keyBindingCapture.Start(OnBindingMousePressed, OnBindingKeyPressed);
     }
 
     private void StopKeyBinding()
     {
-        _isBinding = false;
-
-        _bindingMouseHook?.Uninstall();
-        _bindingKeyboardHook?.Uninstall();
-
-        if (_bindingMouseHook != null)
-        {
-            _bindingMouseHook.MouseButtonPressed -= OnBindingMousePressed;
-            _bindingMouseHook.Dispose();
-            _bindingMouseHook = null;
-        }
-
-        if (_bindingKeyboardHook != null)
-        {
-            _bindingKeyboardHook.KeyPressed -= OnBindingKeyPressed;
-            _bindingKeyboardHook.Dispose();
-            _bindingKeyboardHook = null;
-        }
+        _keyBindingCapture.Stop();
 
         DispatcherQueue.TryEnqueue(() =>
         {
@@ -106,12 +78,12 @@ public sealed partial class MacroPanel : UserControl
     {
         DispatcherQueue.TryEnqueue(() =>
         {
-            if (_settings == null || _bindingKeyboardHook == null) return;
+            if (_settings == null || _keyBindingCapture.KeyboardHook == null) return;
 
             // Capture current modifier states from keyboard hook
-            _settings.RequireAlt = _bindingKeyboardHook.IsAltDown;
-            _settings.RequireShift = _bindingKeyboardHook.IsShiftDown;
-            _settings.RequireCtrl = _bindingKeyboardHook.IsCtrlDown;
+            _settings.RequireAlt = _keyBindingCapture.KeyboardHook.IsAltDown;
+            _settings.RequireShift = _keyBindingCapture.KeyboardHook.IsShiftDown;
+            _settings.RequireCtrl = _keyBindingCapture.KeyboardHook.IsCtrlDown;
 
             _settings.KeyType = "mouse";
             _settings.KeyCode = code;
@@ -160,12 +132,12 @@ public sealed partial class MacroPanel : UserControl
                 return;
             }
 
-            if (_settings == null || _bindingKeyboardHook == null) return;
+            if (_settings == null || _keyBindingCapture.KeyboardHook == null) return;
 
             // Capture current modifier states
-            _settings.RequireAlt = _bindingKeyboardHook.IsAltDown;
-            _settings.RequireShift = _bindingKeyboardHook.IsShiftDown;
-            _settings.RequireCtrl = _bindingKeyboardHook.IsCtrlDown;
+            _settings.RequireAlt = _keyBindingCapture.KeyboardHook.IsAltDown;
+            _settings.RequireShift = _keyBindingCapture.KeyboardHook.IsShiftDown;
+            _settings.RequireCtrl = _keyBindingCapture.KeyboardHook.IsCtrlDown;
 
             _settings.KeyType = "keyboard";
             _settings.KeyCode = code;

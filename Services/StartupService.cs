@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Microsoft.Win32;
 
 namespace DualAutoClicker.Services;
@@ -20,8 +21,9 @@ public static class StartupService
             using var key = Registry.CurrentUser.OpenSubKey(RegistryKey, false);
             return key?.GetValue(AppName) != null;
         }
-        catch
+        catch (Exception ex)
         {
+            Debug.WriteLine($"Startup state read failed: {ex}");
             return false;
         }
     }
@@ -49,9 +51,9 @@ public static class StartupService
                 key.DeleteValue(AppName, false);
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Silently fail if registry access denied
+            Debug.WriteLine($"Startup state update failed: {ex}");
         }
     }
 }

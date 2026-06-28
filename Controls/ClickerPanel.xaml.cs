@@ -5,7 +5,6 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
 using DualAutoClicker.Models;
 using DualAutoClicker.Services;
-using DualAutoClicker.Native;
 using Windows.UI;
 
 namespace DualAutoClicker.Controls;
@@ -14,9 +13,7 @@ public sealed partial class ClickerPanel : UserControl
 {
     private SingleClickerSettings? _settings;
     private bool _isLeftClick = true;
-    private bool _isBinding = false;
-    private MouseHook? _bindingMouseHook;
-    private KeyboardHook? _bindingKeyboardHook;
+    private readonly KeyBindingCapture _keyBindingCapture = new();
 
     // Dependency Properties
     public static readonly DependencyProperty TitleProperty =
@@ -213,7 +210,7 @@ public sealed partial class ClickerPanel : UserControl
 
     private void ChangeKeyButton_Click(object sender, RoutedEventArgs e)
     {
-        if (_isBinding)
+        if (_keyBindingCapture.IsActive)
         {
             StopKeyBinding();
             return;
@@ -224,40 +221,14 @@ public sealed partial class ClickerPanel : UserControl
 
     private void StartKeyBinding()
     {
-        _isBinding = true;
         ChangeKeyButton.Content = "...";
         ChangeKeyButton.Background = new SolidColorBrush(Color.FromArgb(255, 180, 130, 0));
-
-        _bindingMouseHook = new MouseHook();
-        _bindingKeyboardHook = new KeyboardHook();
-
-        _bindingMouseHook.MouseButtonPressed += OnBindingMousePressed;
-        _bindingKeyboardHook.KeyPressed += OnBindingKeyPressed;
-
-        _bindingMouseHook.Install();
-        _bindingKeyboardHook.Install();
+        _keyBindingCapture.Start(OnBindingMousePressed, OnBindingKeyPressed);
     }
 
     private void StopKeyBinding()
     {
-        _isBinding = false;
-
-        _bindingMouseHook?.Uninstall();
-        _bindingKeyboardHook?.Uninstall();
-
-        if (_bindingMouseHook != null)
-        {
-            _bindingMouseHook.MouseButtonPressed -= OnBindingMousePressed;
-            _bindingMouseHook.Dispose();
-            _bindingMouseHook = null;
-        }
-
-        if (_bindingKeyboardHook != null)
-        {
-            _bindingKeyboardHook.KeyPressed -= OnBindingKeyPressed;
-            _bindingKeyboardHook.Dispose();
-            _bindingKeyboardHook = null;
-        }
+        _keyBindingCapture.Stop();
 
         DispatcherQueue.TryEnqueue(() =>
         {

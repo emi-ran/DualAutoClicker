@@ -2,10 +2,8 @@ using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Media;
-using DualAutoClicker.Models;
 using DualAutoClicker.Services;
-using DualAutoClicker.Native;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using WinRT.Interop;
 using Windows.Graphics;
@@ -20,10 +18,6 @@ public sealed partial class MainWindow : Window
     private readonly SettingsService _settingsService;
     private readonly ClickerService _clickerService;
     private readonly Button[] _profileButtons = new Button[6];
-
-    // For key binding
-    private readonly MouseHook _bindingMouseHook;
-    private readonly KeyboardHook _bindingKeyboardHook;
 
     public MainWindow()
     {
@@ -41,10 +35,6 @@ public sealed partial class MainWindow : Window
         ConfigureWindow();
         SetupTitleBar();
         CreateProfileButtons();
-
-        // Initialize binding hooks
-        _bindingMouseHook = new MouseHook();
-        _bindingKeyboardHook = new KeyboardHook();
 
         // Wire up events
         _settingsService.ProfileChanged += OnProfileChanged;
@@ -118,9 +108,9 @@ public sealed partial class MainWindow : Window
 
                 _appWindow.TitleBar.SetDragRectangles(rects.ToArray());
             }
-            catch
+            catch (Exception ex)
             {
-                // UI henüz tam yüklenmemiş olabilir, ignore
+                Debug.WriteLine($"UpdateDragRects failed: {ex}");
             }
         }
     }
