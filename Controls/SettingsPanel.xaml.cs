@@ -3,13 +3,13 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using DualAutoClicker.Services;
 using DualAutoClicker.Views;
-using Windows.UI;
 
 namespace DualAutoClicker.Controls;
 
 public sealed partial class SettingsPanel : UserControl
 {
     private SettingsService? _settingsService;
+    private bool _isLoading;
     private readonly KeyBindingCapture _keyBindingCapture = new();
 
     public SettingsPanel()
@@ -28,8 +28,23 @@ public sealed partial class SettingsPanel : UserControl
         _settingsService = settingsService;
         var settings = settingsService.Settings;
 
-        MasterToggleCheckBox.IsChecked = settings.MasterToggle.Enabled;
-        MasterKeyLabel.Text = settings.MasterToggle.KeyName;
+        _isLoading = true;
+        try
+        {
+            MasterToggleCheckBox.IsOn = settings.MasterToggle.Enabled;
+            MasterKeyLabel.Text = settings.MasterToggle.KeyName;
+
+            var window = settings.WindowTarget;
+            WindowStatusLabel.Text = window.Enabled && !string.IsNullOrEmpty(window.ProcessName)
+                ? $"{window.ProcessName.Split(',').Length} uygulama seçili"
+                : "Tüm uygulamalar";
+
+            StartupCheckBox.IsOn = StartupService.IsStartupEnabled();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
 
         if (!settings.MasterToggle.Enabled)
         {
@@ -40,14 +55,6 @@ public sealed partial class SettingsPanel : UserControl
         {
             UpdateMasterVisualState(App.ClickerService.MasterEnabled);
         }
-
-
-        var window = settings.WindowTarget;
-        WindowStatusLabel.Text = window.Enabled && !string.IsNullOrEmpty(window.ProcessName)
-            ? $"{window.ProcessName.Split(',').Length} uygulama seçili"
-            : "Tüm Uygulamalar";
-
-        StartupCheckBox.IsChecked = StartupService.IsStartupEnabled();
     }
 
     public void UpdateMasterState(bool enabled)
@@ -57,24 +64,19 @@ public sealed partial class SettingsPanel : UserControl
 
     private void UpdateMasterVisualState(bool enabled)
     {
-        var brushKey = enabled ? "AccentOrangeBrush" : "AccentRedBrush";
-        var colorKey = enabled ? "AccentOrangeColor" : "AccentRedColor";
-
-        var brush = (Brush)Application.Current.Resources[brushKey];
-        var color = (Color)Application.Current.Resources[colorKey];
-
-        MasterKeyLabel.Foreground = brush;
-        MasterKeyButton.Background = new SolidColorBrush(color);
-        MasterKeyButton.Content = enabled ? "Seç" : "Durdu";
+        MasterKeyLabel.Foreground = enabled ? ThemeBrush("AccentTextBrush") : ThemeBrush("WarningBrush");
         MasterKeyButton.IsEnabled = enabled;
-    }
 
+        MasterStateDot.Fill = enabled ? ThemeBrush("SuccessBrush") : ThemeBrush("WarningBrush");
+        MasterStateText.Foreground = enabled ? ThemeBrush("SuccessBrush") : ThemeBrush("WarningBrush");
+        MasterStateText.Text = enabled ? "Etkin" : "Duraklatıldı";
+    }
 
     private void MasterToggleCheckBox_Changed(object sender, RoutedEventArgs e)
     {
-        if (_settingsService == null) return;
+        if (_isLoading || _settingsService == null) return;
 
-        bool enabled = MasterToggleCheckBox.IsChecked == true;
+        bool enabled = MasterToggleCheckBox.IsOn;
         _settingsService.Settings.MasterToggle.Enabled = enabled;
         _settingsService.Save();
 
@@ -89,7 +91,6 @@ public sealed partial class SettingsPanel : UserControl
         }
     }
 
-
     private void MasterKeyButton_Click(object sender, RoutedEventArgs e)
     {
         if (_keyBindingCapture.IsActive)
@@ -103,8 +104,8 @@ public sealed partial class SettingsPanel : UserControl
 
     private void StartKeyBinding()
     {
-        MasterKeyButton.Content = "...";
-        MasterKeyButton.Background = new SolidColorBrush(Color.FromArgb(255, 180, 130, 0));
+        MasterKeyButton.Content = "Tuşa basın…";
+        CaptureHint.Visibility = Visibility.Visible;
         _keyBindingCapture.Start(OnBindingMousePressed, OnBindingKeyPressed);
     }
 
@@ -114,8 +115,8 @@ public sealed partial class SettingsPanel : UserControl
 
         DispatcherQueue.TryEnqueue(() =>
         {
-            MasterKeyButton.Content = "Seç";
-            MasterKeyButton.Background = new SolidColorBrush(Color.FromArgb(255, 255, 140, 0)); // Orange
+            MasterKeyButton.Content = "Değiştir";
+            CaptureHint.Visibility = Visibility.Collapsed;
         });
     }
 
@@ -171,7 +172,6 @@ public sealed partial class SettingsPanel : UserControl
             XamlRoot = this.XamlRoot
         };
 
-
         var result = await dialog.ShowAsync();
 
         if (result == ContentDialogResult.Primary)
@@ -182,7 +182,7 @@ public sealed partial class SettingsPanel : UserControl
             {
                 window.Enabled = false;
                 window.ProcessName = "";
-                WindowStatusLabel.Text = "Tüm Uygulamalar";
+                WindowStatusLabel.Text = "Tüm uygulamalar";
             }
             else
             {
@@ -190,7 +190,7 @@ public sealed partial class SettingsPanel : UserControl
                 window.ProcessName = string.Join(",", dialog.SelectedProcesses);
                 WindowStatusLabel.Text = window.Enabled
                     ? $"{dialog.SelectedProcesses.Count} uygulama seçili"
-                    : "Tüm Uygulamalar";
+                    : "Tüm uygulamalar";
             }
 
             _settingsService.Save();
@@ -200,11 +200,13 @@ public sealed partial class SettingsPanel : UserControl
 
     private void StartupCheckBox_Changed(object sender, RoutedEventArgs e)
     {
-        if (_settingsService == null) return;
+        if (_isLoading || _settingsService == null) return;
 
-        bool enabled = StartupCheckBox.IsChecked == true;
+        bool enabled = StartupCheckBox.IsOn;
         _settingsService.Settings.StartWithWindows = enabled;
         _settingsService.Save();
         StartupService.SetStartupEnabled(enabled);
     }
+
+    private static Brush ThemeBrush(string key) => (Brush)Application.Current.Resources[key];
 }

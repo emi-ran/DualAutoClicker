@@ -19,7 +19,7 @@
     <!-- Application info -->
     <ApplicationIcon>Assets\icon.ico</ApplicationIcon>
     <AssemblyName>DualAutoClicker</AssemblyName>
-    <Version>3.2.4</Version>
+    <Version>3.2.5</Version>
     <Company>DualAutoClicker</Company>
     <Product>Dual AutoClicker</Product>
     <Description>High-performance dual autoclicker with independent left/right click settings - WinUI 3</Description>

@@ -8,191 +8,199 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <Border Background="{StaticResource BgCardBrush}" 
-            CornerRadius="{StaticResource MediumRadius}"
-            Padding="20"
-            BorderThickness="0,3,0,0">
-        <Border.BorderBrush>
-            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                <GradientStop Color="{StaticResource AccentGreenColor}" Offset="0"/>
-                <GradientStop Color="{StaticResource AccentCyanColor}" Offset="1"/>
-            </LinearGradientBrush>
-        </Border.BorderBrush>
-
-        <Grid RowSpacing="16">
+    <Border Style="{StaticResource CardPanelStyle}">
+        <Grid RowSpacing="14">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
             <!-- Header -->
-            <Grid Grid.Row="0">
+            <Grid Grid.Row="0" ColumnSpacing="12">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
-                    <FontIcon Glyph="&#xE765;" FontSize="20" Foreground="{StaticResource AccentGreenBrush}"/>
-                    <CheckBox x:Name="EnabledCheckBox" 
-                              Content="KLAVYE MAKRO"
-                              FontSize="16"
-                              FontWeight="SemiBold"
-                              Foreground="{StaticResource TextPrimaryBrush}"
-                              Checked="EnabledCheckBox_Changed"
-                              Unchecked="EnabledCheckBox_Changed"/>
-                </StackPanel>
-            </Grid>
-
-            <!-- Activation Key Row -->
-            <Grid Grid.Row="1">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-
-                <TextBlock Grid.Column="0" 
-                           Text="Aktivasyon Tuşu" 
-                           Style="{StaticResource BodyTextStyle}"
-                           VerticalAlignment="Center"/>
-
-                <Border Grid.Column="1" Style="{StaticResource KeyLabelStyle}" Margin="0,0,8,0">
-                    <TextBlock x:Name="KeyLabel" 
-                               Text="Yok" 
-                               FontSize="14"
-                               FontWeight="Bold"
-                               Foreground="{StaticResource AccentGreenBrush}"
-                               HorizontalAlignment="Center"/>
+                <Border
+                    Grid.Column="0"
+                    VerticalAlignment="Center"
+                    Style="{StaticResource IconTileStyle}">
+                    <FontIcon
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        FontSize="17"
+                        Foreground="{StaticResource AccentTextBrush}"
+                        Glyph="&#xE765;" />
                 </Border>
 
-                <Button x:Name="ChangeKeyButton" 
-                        Grid.Column="2"
-                        Content="Seç"
-                        Padding="12,6"
-                        Click="ChangeKeyButton_Click">
-                    <Button.Background>
-                        <SolidColorBrush Color="{StaticResource AccentGreenColor}"/>
-                    </Button.Background>
-                </Button>
+                <StackPanel
+                    Grid.Column="1"
+                    VerticalAlignment="Center"
+                    Spacing="2">
+                    <TextBlock
+                        Style="{StaticResource CardTitleTextStyle}"
+                        Text="Klavye makrosu" />
+                    <TextBlock
+                        Style="{StaticResource CaptionTextStyle}"
+                        Text="Tek tuşla otomatik metin gönderir." />
+                </StackPanel>
+
+                <ToggleSwitch
+                    x:Name="EnabledCheckBox"
+                    Grid.Column="2"
+                    Width="52"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    AutomationProperties.Name="Klavye makrosunu etkinleştir"
+                    OffContent=""
+                    OnContent=""
+                    Style="{StaticResource CompactToggleSwitchStyle}"
+                    Toggled="EnabledCheckBox_Changed" />
             </Grid>
 
-            <!-- Base Text Input -->
-            <Grid Grid.Row="2">
+            <Border
+                Grid.Row="1"
+                Height="1"
+                Background="{StaticResource BorderSubtleBrush}" />
+
+            <!-- Activation key -->
+            <Grid Grid.Row="2" ColumnSpacing="12">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <TextBlock Grid.Column="0" 
-                           Text="Metin" 
-                           Style="{StaticResource BodyTextStyle}"
-                           VerticalAlignment="Center"
-                           Margin="0,0,16,0"/>
+                <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2">
+                    <TextBlock
+                        Style="{StaticResource FieldLabelTextStyle}"
+                        Text="Etkinleştirme tuşu" />
+                    <TextBlock
+                        Style="{StaticResource CaptionTextStyle}"
+                        Text="Alt, Ctrl ve Shift kombinasyonları desteklenir" />
+                    <TextBlock
+                        x:Name="CaptureHint"
+                        Margin="0,2,0,0"
+                        Foreground="{StaticResource AccentTextBrush}"
+                        Style="{StaticResource CaptionTextStyle}"
+                        Text="Bir tuşa veya fare düğmesine basın · İptal: Esc"
+                        Visibility="Collapsed" />
+                </StackPanel>
 
-                <TextBox x:Name="BaseTextBox" 
-                         Grid.Column="1"
-                         PlaceholderText="Gönderilecek metin (örn: 3/4 vc)"
-                         Background="{StaticResource BgInputBrush}"
-                         BorderBrush="{StaticResource BorderBrush}"
-                         TextChanged="BaseTextBox_TextChanged"/>
+                <Border
+                    Grid.Column="1"
+                    VerticalAlignment="Center"
+                    Style="{StaticResource KeyLabelStyle}">
+                    <TextBlock
+                        x:Name="KeyLabel"
+                        Style="{StaticResource KeyTextStyle}"
+                        Text="Yok" />
+                </Border>
+
+                <Button
+                    x:Name="ChangeKeyButton"
+                    Grid.Column="2"
+                    VerticalAlignment="Center"
+                    AutomationProperties.Name="Makro etkinleştirme tuşunu seç"
+                    Click="ChangeKeyButton_Click"
+                    Content="Seç"
+                    Style="{StaticResource SecondaryButtonStyle}" />
             </Grid>
 
-            <!-- Random Chars Config -->
-            <Border Grid.Row="3" 
-                    Background="{StaticResource BgInputBrush}" 
-                    CornerRadius="{StaticResource SmallRadius}"
-                    Padding="16,12">
-                <Grid ColumnSpacing="24">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
+            <!-- Text -->
+            <StackPanel Grid.Row="3" Spacing="6">
+                <TextBlock
+                    Style="{StaticResource FieldLabelTextStyle}"
+                    Text="Gönderilecek metin" />
+                <TextBox
+                    x:Name="BaseTextBox"
+                    AutomationProperties.Name="Gönderilecek metin"
+                    PlaceholderText="Örn. 3/4 vc"
+                    Style="{StaticResource FormTextBoxStyle}"
+                    TextChanged="BaseTextBox_TextChanged" />
+                <TextBlock
+                    Style="{StaticResource CaptionTextStyle}"
+                    Text="En fazla 200 karakter gönderilir." />
+            </StackPanel>
 
-                    <!-- Min Chars -->
-                    <Grid Grid.Column="0" ColumnSpacing="8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        
-                        <TextBlock Grid.Column="0"
-                                   Text="Min" 
-                                   FontSize="14"
-                                   FontWeight="SemiBold"
-                                   Foreground="{StaticResource AccentGreenBrush}"
-                                   VerticalAlignment="Center"/>
-                                   
-                        <NumberBox x:Name="MinCharsBox"
-                                   Grid.Column="1"
-                                   Value="3"
-                                   Minimum="1"
-                                   Maximum="50"
-                                   SpinButtonPlacementMode="Hidden"
-                                   SmallChange="1"
-                                   LargeChange="5"
-                                   ValueChanged="MinCharsBox_ValueChanged"
-                                   Background="{StaticResource BgCardBrush}"
-                                   BorderBrush="{StaticResource BorderBrush}"
-                                   BorderThickness="1"
-                                   CornerRadius="4"/>
-                    </Grid>
+            <!-- Random appendix -->
+            <Border Grid.Row="4" Style="{StaticResource InsetPanelStyle}">
+                <Grid RowSpacing="12">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
 
-                    <!-- Max Chars -->
-                    <Grid Grid.Column="1" ColumnSpacing="8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        
-                        <TextBlock Grid.Column="0"
-                                   Text="Max" 
-                                   FontSize="14"
-                                   FontWeight="SemiBold"
-                                   Foreground="{StaticResource AccentCyanBrush}"
-                                   VerticalAlignment="Center"/>
-                                   
-                        <NumberBox x:Name="MaxCharsBox"
-                                   Grid.Column="1"
-                                   Value="10"
-                                   Minimum="1"
-                                   Maximum="50"
-                                   SpinButtonPlacementMode="Hidden"
-                                   SmallChange="1"
-                                   LargeChange="5"
-                                   ValueChanged="MaxCharsBox_ValueChanged"
-                                   Background="{StaticResource BgCardBrush}"
-                                   BorderBrush="{StaticResource BorderBrush}"
-                                   BorderThickness="1"
-                                   CornerRadius="4"/>
-                    </Grid>
+                    <StackPanel Grid.Row="0" Spacing="2">
+                        <TextBlock
+                            Style="{StaticResource FieldLabelTextStyle}"
+                            Text="Rastgele ek" />
+                        <TextBlock
+                            Style="{StaticResource CaptionTextStyle}"
+                            Text="Metnin sonuna rastgele karakterler eklenir." />
+                    </StackPanel>
 
-                    <!-- Junk Characters -->
-                    <Grid Grid.Column="2" ColumnSpacing="8">
+                    <Grid Grid.Row="1" ColumnSpacing="12">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="0.8*" />
+                            <ColumnDefinition Width="0.8*" />
+                            <ColumnDefinition Width="1.6*" />
                         </Grid.ColumnDefinitions>
-                        
-                        <TextBlock Grid.Column="0"
-                                   Text="Karakterler" 
-                                   FontSize="14"
-                                   FontWeight="SemiBold"
-                                   Foreground="{StaticResource TextSecondaryBrush}"
-                                   VerticalAlignment="Center"
-                                   ToolTipService.ToolTip="Rastgele eklenecek karakterler"/>
-                                   
-                        <TextBox x:Name="JunkCharsBox"
-                                 Grid.Column="1"
-                                 Text=":;*!'.,:&quot;~"
-                                 Background="{StaticResource BgCardBrush}"
-                                 BorderBrush="{StaticResource BorderBrush}"
-                                 BorderThickness="1"
-                                 CornerRadius="4"
-                                 TextChanged="JunkCharsBox_TextChanged"/>
+
+                        <StackPanel Grid.Column="0" Spacing="6">
+                            <TextBlock
+                                Style="{StaticResource CaptionTextStyle}"
+                                Text="En az" />
+                            <NumberBox
+                                x:Name="MinCharsBox"
+                                AutomationProperties.Name="En az rastgele karakter sayısı"
+                                LargeChange="5"
+                                Maximum="50"
+                                Minimum="1"
+                                SmallChange="1"
+                                SpinButtonPlacementMode="Compact"
+                                Style="{StaticResource FormNumberBoxStyle}"
+                                ToolTipService.ToolTip="Eklenecek en az karakter sayısı"
+                                Value="3"
+                                ValueChanged="MinCharsBox_ValueChanged" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" Spacing="6">
+                            <TextBlock
+                                Style="{StaticResource CaptionTextStyle}"
+                                Text="En çok" />
+                            <NumberBox
+                                x:Name="MaxCharsBox"
+                                AutomationProperties.Name="En çok rastgele karakter sayısı"
+                                LargeChange="5"
+                                Maximum="50"
+                                Minimum="1"
+                                SmallChange="1"
+                                SpinButtonPlacementMode="Compact"
+                                Style="{StaticResource FormNumberBoxStyle}"
+                                ToolTipService.ToolTip="Eklenecek en çok karakter sayısı"
+                                Value="10"
+                                ValueChanged="MaxCharsBox_ValueChanged" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="2" Spacing="6">
+                            <TextBlock
+                                Style="{StaticResource CaptionTextStyle}"
+                                Text="Karakter havuzu" />
+                            <TextBox
+                                x:Name="JunkCharsBox"
+                                AutomationProperties.Name="Rastgele karakter havuzu"
+                                PlaceholderText="Örn. :;*!'.,&quot;~"
+                                Style="{StaticResource FormTextBoxStyle}"
+                                Text=":;*!'.,:&quot;~"
+                                TextChanged="JunkCharsBox_TextChanged"
+                                ToolTipService.ToolTip="Rastgele seçilecek karakterler" />
+                        </StackPanel>
                     </Grid>
                 </Grid>
             </Border>

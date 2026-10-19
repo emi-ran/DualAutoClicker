@@ -9,97 +9,245 @@
 
     <Grid x:Name="RootGrid" Background="{StaticResource BgDarkBrush}">
         <Grid.RowDefinitions>
-            <RowDefinition Height="48"/>
-            <RowDefinition Height="*"/>
+            <RowDefinition Height="48" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <!-- Custom Title Bar -->
-        <Grid x:Name="AppTitleBar" Grid.Row="0" Background="Transparent">
+        <!-- Custom title bar -->
+        <Grid x:Name="AppTitleBar" Grid.Row="0" Background="{StaticResource BgElevatedBrush}">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition x:Name="LeftCaptionInsetColumn" Width="0" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition x:Name="RightCaptionInsetColumn" Width="0" />
             </Grid.ColumnDefinitions>
 
-            <!-- Logo and Profile Buttons -->
-            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" Margin="16,0,0,0" VerticalAlignment="Center">
-                <!-- Logo -->
-                <TextBlock Text="&#xE945;" FontFamily="Segoe MDL2 Assets" FontSize="20" 
-                           Foreground="{StaticResource AccentCyanBrush}" VerticalAlignment="Center"/>
+            <Border x:Name="LeftCaptionInset" Grid.Column="0" />
 
-                <!-- Profile Buttons -->
-                <ItemsControl x:Name="ProfileButtons" Margin="12,0,0,0">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <StackPanel Orientation="Horizontal" Spacing="4"/>
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                </ItemsControl>
+            <!-- Brand -->
+            <StackPanel
+                Grid.Column="1"
+                Margin="16,0,0,0"
+                VerticalAlignment="Center"
+                Orientation="Horizontal"
+                Spacing="10">
+                <Border
+                    Width="26"
+                    Height="26"
+                    Background="{StaticResource AccentTintBrush}"
+                    CornerRadius="7">
+                    <TextBlock
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        FontSize="10.5"
+                        FontWeight="Bold"
+                        Foreground="{StaticResource AccentTextBrush}"
+                        Text="DA" />
+                </Border>
+                <TextBlock
+                    VerticalAlignment="Center"
+                    FontSize="13"
+                    FontWeight="SemiBold"
+                    Foreground="{StaticResource TextPrimaryBrush}"
+                    Text="Dual AutoClicker" />
             </StackPanel>
 
-            <!-- Gradient Line at Bottom -->
-            <Border Grid.ColumnSpan="3" VerticalAlignment="Bottom" Height="2">
-                <Border.Background>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                        <GradientStop Color="{StaticResource AccentCyanColor}" Offset="0"/>
-                        <GradientStop Color="{StaticResource AccentPurpleColor}" Offset="1"/>
-                    </LinearGradientBrush>
-                </Border.Background>
+            <!-- Master state -->
+            <Border
+                x:Name="MasterStatusPill"
+                Grid.Column="2"
+                Margin="0,0,14,0"
+                Padding="9,4"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Center"
+                Background="{StaticResource BgCardBrush}"
+                BorderBrush="{StaticResource BorderSubtleBrush}"
+                BorderThickness="1"
+                CornerRadius="{StaticResource PillRadius}"
+                IsHitTestVisible="False">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <Ellipse
+                        x:Name="MasterStatusDot"
+                        Width="6"
+                        Height="6"
+                        VerticalAlignment="Center"
+                        Fill="{StaticResource SuccessBrush}" />
+                    <TextBlock
+                        x:Name="MasterStatusText"
+                        VerticalAlignment="Center"
+                        AutomationProperties.LiveSetting="Polite"
+                        FontSize="11.5"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource TextSecondaryBrush}"
+                        Text="Etkin" />
+                </StackPanel>
             </Border>
 
-            <!-- Window Controls -->
-            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Top">
-                <Button x:Name="MinimizeButton" Style="{StaticResource WindowControlButtonStyle}"
-                        Content="&#xE921;" Click="MinimizeButton_Click" ToolTipService.ToolTip="Küçült"/>
-                <Button x:Name="MaximizeButton" Style="{StaticResource WindowControlButtonStyle}"
-                        Content="&#xE922;" Click="MaximizeButton_Click" ToolTipService.ToolTip="Büyüt"/>
-                <Button x:Name="CloseButton" Style="{StaticResource CloseButtonStyle}"
-                        Content="&#xE8BB;" Foreground="White" Click="CloseButton_Click" ToolTipService.ToolTip="Kapat"/>
-            </StackPanel>
+            <!-- Reserve the system caption-button area; Windows draws this single control set. -->
+            <Border x:Name="RightCaptionInset" Grid.Column="3" />
+
+            <Border
+                Grid.ColumnSpan="4"
+                Height="1"
+                VerticalAlignment="Bottom"
+                Background="{StaticResource BorderSubtleBrush}" />
         </Grid>
 
-        <!-- Main Content -->
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-            <Grid x:Name="MainContent" Padding="16">
+        <!-- Profile navigation -->
+        <Border
+            Grid.Row="1"
+            Padding="24,9"
+            Background="{StaticResource BgDarkBrush}"
+            BorderBrush="{StaticResource BorderSubtleBrush}"
+            BorderThickness="0,0,0,1">
+            <Grid ColumnSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <TextBlock
+                    Grid.Column="0"
+                    VerticalAlignment="Center"
+                    Style="{StaticResource SectionLabelTextStyle}"
+                    Text="PROFİLLER" />
+
+                <ScrollViewer
+                    Grid.Column="1"
+                    HorizontalScrollBarVisibility="Auto"
+                    HorizontalScrollMode="Auto"
+                    VerticalScrollBarVisibility="Disabled"
+                    VerticalScrollMode="Disabled">
+                    <ItemsControl
+                        x:Name="ProfileButtons"
+                        HorizontalAlignment="Left"
+                        AutomationProperties.Name="Profil seçimi">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" Spacing="6" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                    </ItemsControl>
+                </ScrollViewer>
+
+                <TextBlock
+                    x:Name="ProfileHint"
+                    Grid.Column="2"
+                    VerticalAlignment="Center"
+                    Style="{StaticResource CaptionTextStyle}"
+                    Text="Sağ tık: yeniden adlandır" />
+            </Grid>
+        </Border>
+
+        <!-- Page content -->
+        <ScrollViewer
+            Grid.Row="2"
+            HorizontalContentAlignment="Center"
+            HorizontalScrollBarVisibility="Disabled"
+            HorizontalScrollMode="Disabled"
+            VerticalScrollBarVisibility="Auto">
+            <Grid
+                x:Name="MainContent"
+                Width="{Binding ActualWidth, ElementName=RootGrid}"
+                MaxWidth="1120"
+                Padding="{StaticResource PagePadding}"
+                HorizontalAlignment="Center"
+                RowSpacing="16">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <!-- Clicker Panels Row -->
-                <Grid Grid.Row="0" Margin="0,0,0,16">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="16"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
+                <StackPanel Grid.Row="0" Spacing="2">
+                    <TextBlock
+                        Style="{StaticResource PageTitleTextStyle}"
+                        Text="Kontrol paneli" />
+                    <TextBlock
+                        Style="{StaticResource CaptionTextStyle}"
+                        Text="Sol ve sağ tık ile klavye makrosunu profillere göre yönetin." />
+                </StackPanel>
 
-                <!-- Left Click Panel -->
-                <controls:ClickerPanel x:Name="LeftClickPanel" 
-                                       Grid.Column="0"
-                                       Title="SOL TIK"
-                                       AccentColor="{StaticResource AccentCyanColor}"
-                                       SecondaryColor="{StaticResource AccentPurpleColor}"
-                                       IsLeftClick="True"
-                                       VerticalAlignment="Stretch"/>
+                <!-- Shown when the master switch pauses all automation -->
+                <Border
+                    x:Name="MasterBanner"
+                    Grid.Row="1"
+                    Padding="14,12"
+                    Background="{StaticResource WarningTintBrush}"
+                    BorderBrush="{StaticResource WarningBrush}"
+                    BorderThickness="1"
+                    CornerRadius="{StaticResource MediumRadius}"
+                    Visibility="Collapsed">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <FontIcon
+                            VerticalAlignment="Top"
+                            FontSize="16"
+                            Foreground="{StaticResource WarningBrush}"
+                            Glyph="&#xE7BA;" />
+                        <StackPanel Spacing="2">
+                            <TextBlock
+                                FontSize="13"
+                                FontWeight="SemiBold"
+                                Foreground="{StaticResource TextPrimaryBrush}"
+                                Text="Otomasyon duraklatıldı" />
+                            <TextBlock
+                                Style="{StaticResource CaptionTextStyle}"
+                                Text="Yeniden başlatmak için master kontrol tuşuna basın." />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
 
-                <!-- Right Click Panel -->
-                <controls:ClickerPanel x:Name="RightClickPanel" 
-                                       Grid.Column="2"
-                                       Title="SAĞ TIK"
-                                       AccentColor="{StaticResource AccentPinkColor}"
-                                       SecondaryColor="{StaticResource AccentOrangeColor}"
-                                       IsLeftClick="False"
-                                       VerticalAlignment="Stretch"/>
+                <Grid x:Name="ContentRoot" Grid.Row="2" RowSpacing="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <Grid
+                        x:Name="ClickersGrid"
+                        Grid.Row="0"
+                        ColumnSpacing="16"
+                        RowSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <controls:ClickerPanel
+                            x:Name="LeftClickPanel"
+                            Grid.Row="0"
+                            Grid.Column="0"
+                            Title="Sol tık"
+                            IsLeftClick="True" />
+
+                        <controls:ClickerPanel
+                            x:Name="RightClickPanel"
+                            Grid.Row="0"
+                            Grid.Column="1"
+                            Title="Sağ tık"
+                            IsLeftClick="False" />
+                    </Grid>
+
+                    <controls:MacroPanel x:Name="MacroPanel" Grid.Row="1" />
+
+                    <controls:SettingsPanel x:Name="SettingsPanel" Grid.Row="2" />
+
+                    <TextBlock
+                        Grid.Row="3"
+                        Margin="0,2,0,0"
+                        HorizontalAlignment="Center"
+                        Style="{StaticResource CaptionTextStyle}"
+                        Text="Değişiklikler otomatik olarak kaydedilir." />
+                </Grid>
             </Grid>
-
-            <!-- Macro Panel -->
-            <controls:MacroPanel x:Name="MacroPanel" Grid.Row="1" Margin="0,0,0,16"/>
-
-            <!-- Settings Panel -->
-            <controls:SettingsPanel x:Name="SettingsPanel" Grid.Row="2"/>
-        </Grid>
         </ScrollViewer>
     </Grid>
 </Window>

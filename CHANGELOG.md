@@ -2,6 +2,29 @@
 
 ## [Unreleased]
 
+## [3.2.5] - 2026-10-20
+
+### Düzeltmeler
+- Özel pencere kontrol düğmeleri kaldırıldı; küçült/büyüt/kapat için Windows başlık çubuğunun tek düğme grubu kullanılıyor.
+- Basılı tut / Aç-kapat seçiminde seçili mod belirgin mavi dolgu ve kontrastlı metinle gösteriliyor; ayarlar panelinde Master durumu başlığın yanına alındı ve anahtarlar dikey ortalandı.
+- Pencere 760 × 560 px altına küçültülemiyor; Master kısayol anahtarı başlık ve durumuyla aynı gruba taşındı.
+- Ayarlar bölümündeki Master kısayol anahtarı, kısa etiketiyle birlikte sağ sütunda ortalı gösteriliyor.
+- Ana içerik pencerenin kullanılabilir genişliğine göre ölçülüyor; tıklama kartlarının responsive eşiği de gerçek kart alanına göre hesaplanıyor, böylece büyütmede yatay taşma olmuyor.
+- Sol/sağ tık kartlarının açma-kapama anahtarları kart başlığının en sağına hizalandı.
+- Başlık çubuğundaki Master durum rozeti, yeşil çerçeve yerine nötr yüzey ve ince kenarlıkla sadeleştirildi; durum rengi küçük noktada korunuyor.
+- Ayarlar panelindeki Master ve Windows ile başlat anahtarları, boş etiket alanı daraltılarak kendi sağ sütunlarında doğru hizalandı.
+- Tıklama hızı ve rastgelelik sayı alanlarının metni ortalandı; odak ve fare tıklaması tamamlandıktan sonra imleç sona taşınıyor, odak bırakılınca seçim temizleniyor.
+- Sayı alanı odaktayken kartın boş bir yerine tıklamak odağı kart yüzeyine taşıyor ve sayı alanından çıkıyor.
+- Kart yüzeyine klavye odağı geldiğinde kenarlık vurgu rengiyle gösteriliyor.
+- Klavye makrosu kartının etkinleştirme anahtarı da kart başlığının sağ kenarına hizalandı.
+
+### Arayüz
+- Tüm arayüz sakin koyu tema, tek mavi vurgu rengi ve tutarlı tipografi/kontrol stilleriyle yeniden tasarlandı; neon ve çok renkli kart görünümü kaldırıldı.
+- Başlık çubuğuna master durum rozeti; başlık altına profil şeridi ve sayfa başlığı eklendi. Otomasyon duraklatıldığında içerik soluklaşır ve uyarı şeridi görünür.
+- Tıklama, klavye makrosu ve ayarlar panelleri tek düzen dilinde yenilendi; etkinleştirme anahtarları, bölümlü mod seçimi, tuş yakalama yönergesi ve erişilebilir adlar eklendi.
+- Pencere 840 px'in altına indiğinde tıklama kartları alt alta geçer; pencere boyutu ekran çalışma alanına göre sınırlandırılır.
+- Uygulama ve iletişim kutuları koyu temaya sabitlendi (RequestedTheme="Dark"), böylece açık sistem temasında kontroller karışık görünmez.
+
 ## [3.2.4] - 2026-10-19
 
 ### Klavye Makrosu

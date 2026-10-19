@@ -8,170 +8,238 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <Border x:Name="CardBorder" 
-            Background="{StaticResource BgCardBrush}" 
-            CornerRadius="{StaticResource MediumRadius}"
-            Padding="16,12"
-            BorderThickness="0,3,0,0">
-        
-        <Grid RowSpacing="16" VerticalAlignment="Top">
+    <Border
+        x:Name="CardRoot"
+        IsTabStop="True"
+        AutomationProperties.Name="Tıklama kartı"
+        GotFocus="CardRoot_GotFocus"
+        LostFocus="CardRoot_LostFocus"
+        PointerPressed="CardRoot_PointerPressed"
+        Style="{StaticResource CardPanelStyle}">
+        <Grid RowSpacing="14">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <!-- Header with Status Indicator -->
-            <Grid Grid.Row="0">
+            <!-- Header -->
+            <Grid Grid.Row="0" ColumnSpacing="12">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <!-- Status Indicator -->
-                <Ellipse x:Name="StatusIndicator" 
-                         Grid.Column="0"
-                         Width="16" Height="16"
-                         Fill="{StaticResource TextMutedBrush}"
-                         Margin="0,0,12,0"
-                         VerticalAlignment="Center"/>
-
-                <!-- Enable Checkbox with Title -->
-                <CheckBox x:Name="EnabledCheckBox" 
-                          Grid.Column="1"
-                          Content="SOL TIK"
-                          FontSize="18"
-                          FontWeight="SemiBold"
-                          Foreground="{StaticResource TextPrimaryBrush}"
-                          Checked="EnabledCheckBox_Changed"
-                          Unchecked="EnabledCheckBox_Changed"/>
-            </Grid>
-
-            <!-- Activation Key Row -->
-            <Grid Grid.Row="1">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-
-                <TextBlock Grid.Column="0" 
-                           Text="Aktivasyon Tuşu" 
-                           Style="{StaticResource BodyTextStyle}"
-                           VerticalAlignment="Center"/>
-
-                <Border Grid.Column="1" Style="{StaticResource KeyLabelStyle}" Margin="0,0,8,0">
-                    <TextBlock x:Name="KeyLabel" 
-                               Text="MB4" 
-                               FontSize="14"
-                               FontWeight="Bold"
-                               Foreground="{StaticResource AccentCyanBrush}"
-                               HorizontalAlignment="Center"/>
+                <Border
+                    Grid.Column="0"
+                    Width="40"
+                    Height="40"
+                    VerticalAlignment="Center"
+                    Background="{StaticResource AccentTintBrush}"
+                    CornerRadius="{StaticResource SmallRadius}">
+                    <TextBlock
+                        x:Name="HeaderBadgeText"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        FontSize="11"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource AccentTextBrush}"
+                        Text="SOL" />
                 </Border>
 
-                <Button x:Name="ChangeKeyButton" 
-                        Grid.Column="2"
-                        Content="Değiştir"
-                        Style="{StaticResource AccentButtonStyle}"
-                        Click="ChangeKeyButton_Click"/>
+                <StackPanel
+                    Grid.Column="1"
+                    VerticalAlignment="Center"
+                    Spacing="3">
+                    <TextBlock
+                        x:Name="TitleText"
+                        Style="{StaticResource CardTitleTextStyle}"
+                        Text="Sol tık" />
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <Ellipse
+                            x:Name="StatusIndicator"
+                            Width="6"
+                            Height="6"
+                            VerticalAlignment="Center"
+                            Fill="{StaticResource TextMutedBrush}" />
+                        <TextBlock
+                            x:Name="StatusText"
+                            VerticalAlignment="Center"
+                            AutomationProperties.LiveSetting="Polite"
+                            FontSize="11.5"
+                            Foreground="{StaticResource TextMutedBrush}"
+                            Text="Hazır" />
+                    </StackPanel>
+                </StackPanel>
+
+                <ToggleSwitch
+                    x:Name="EnabledCheckBox"
+                    Grid.Column="2"
+                    Width="52"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    AutomationProperties.Name="Sol tık etkinleştir"
+                    OffContent=""
+                    OnContent=""
+                    Style="{StaticResource CompactToggleSwitchStyle}"
+                    Toggled="EnabledCheckBox_Changed" />
             </Grid>
 
-            <!-- Mode Selection Row -->
-            <Grid Grid.Row="2">
+            <Border
+                Grid.Row="1"
+                Height="1"
+                Background="{StaticResource BorderSubtleBrush}" />
+
+            <!-- Activation key -->
+            <Grid Grid.Row="2" ColumnSpacing="12">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <TextBlock Grid.Column="0" 
-                           Text="Mod" 
-                           Style="{StaticResource BodyTextStyle}"
-                           VerticalAlignment="Center"
-                           Margin="0,0,16,0"/>
-
-                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="24">
-                    <RadioButton x:Name="HoldRadio" 
-                                 Content="Basılı Tut" 
-                                 Foreground="{StaticResource TextPrimaryBrush}"
-                                 Checked="ModeRadio_Changed"/>
-                    <RadioButton x:Name="ToggleRadio" 
-                                 Content="Aç/Kapat" 
-                                 Foreground="{StaticResource TextPrimaryBrush}"
-                                 Checked="ModeRadio_Changed"/>
+                <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2">
+                    <TextBlock
+                        Style="{StaticResource FieldLabelTextStyle}"
+                        Text="Etkinleştirme tuşu" />
+                    <TextBlock
+                        Style="{StaticResource CaptionTextStyle}"
+                        Text="Fare düğmesi veya klavye tuşu" />
+                    <TextBlock
+                        x:Name="CaptureHint"
+                        Margin="0,2,0,0"
+                        Foreground="{StaticResource AccentTextBrush}"
+                        Style="{StaticResource CaptionTextStyle}"
+                        Text="Bir tuşa veya fare düğmesine basın · İptal: Esc"
+                        Visibility="Collapsed" />
                 </StackPanel>
+
+                <Border
+                    Grid.Column="1"
+                    VerticalAlignment="Center"
+                    Style="{StaticResource KeyLabelStyle}">
+                    <TextBlock
+                        x:Name="KeyLabel"
+                        Style="{StaticResource KeyTextStyle}"
+                        Text="MB5" />
+                </Border>
+
+                <Button
+                    x:Name="ChangeKeyButton"
+                    Grid.Column="2"
+                    VerticalAlignment="Center"
+                    AutomationProperties.Name="Etkinleştirme tuşunu değiştir"
+                    Click="ChangeKeyButton_Click"
+                    Content="Değiştir"
+                    Style="{StaticResource SecondaryButtonStyle}" />
             </Grid>
 
-            <!-- CPS and Random Row -->
-            <Border Grid.Row="3" 
-                    Background="{StaticResource BgInputBrush}" 
-                    CornerRadius="{StaticResource SmallRadius}"
-                    Padding="16,12">
-                <Grid ColumnSpacing="24">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
+            <!-- Activation mode -->
+            <Grid Grid.Row="3" ColumnSpacing="12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
 
-                    <!-- CPS -->
-                    <Grid Grid.Column="0" ColumnSpacing="8">
+                <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2">
+                    <TextBlock
+                        Style="{StaticResource FieldLabelTextStyle}"
+                        Text="Çalışma modu" />
+                    <TextBlock
+                        Style="{StaticResource CaptionTextStyle}"
+                        Text="Basılı tut veya aç/kapat" />
+                </StackPanel>
+
+                <Border
+                    Grid.Column="1"
+                    Padding="3"
+                    VerticalAlignment="Center"
+                    Background="{StaticResource BgInputBrush}"
+                    BorderBrush="{StaticResource BorderSubtleBrush}"
+                    BorderThickness="1"
+                    CornerRadius="{StaticResource SmallRadius}">
+                    <StackPanel Orientation="Horizontal" Spacing="2">
+                        <RadioButton
+                            x:Name="HoldRadio"
+                            AutomationProperties.Name="Basılı tut modu"
+                            Checked="ModeRadio_Changed"
+                            Content="Basılı tut"
+                            Style="{StaticResource SegmentedRadioButtonStyle}" />
+                        <RadioButton
+                            x:Name="ToggleRadio"
+                            AutomationProperties.Name="Aç kapat modu"
+                            Checked="ModeRadio_Changed"
+                            Content="Aç/kapat"
+                            Style="{StaticResource SegmentedRadioButtonStyle}" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Speed -->
+            <Border Grid.Row="4" Style="{StaticResource InsetPanelStyle}">
+                <Grid RowSpacing="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0" ColumnSpacing="12">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        
-                        <TextBlock x:Name="CpsLabel"
-                                   Grid.Column="0"
-                                   Text="CPS" 
-                                   FontSize="14"
-                                   FontWeight="SemiBold"
-                                   Foreground="{StaticResource AccentCyanBrush}"
-                                   VerticalAlignment="Center"/>
-                                   
-                        <NumberBox x:Name="CpsNumberBox"
-                                   Grid.Column="1"
-                                   Value="16"
-                                   Minimum="1"
-                                   Maximum="100"
-                                   SpinButtonPlacementMode="Hidden"
-                                   SmallChange="1"
-                                   LargeChange="5"
-                                   ValueChanged="CpsNumberBox_ValueChanged"
-                                   Background="{StaticResource BgCardBrush}"
-                                   BorderBrush="{StaticResource BorderBrush}"
-                                   BorderThickness="1"
-                                   CornerRadius="4"/>
+                        <StackPanel VerticalAlignment="Center" Spacing="2">
+                            <TextBlock
+                                Style="{StaticResource FieldLabelTextStyle}"
+                                Text="Tıklama hızı" />
+                            <TextBlock
+                                Style="{StaticResource CaptionTextStyle}"
+                                Text="Saniyedeki tıklama sayısı (1-100)" />
+                        </StackPanel>
+                        <NumberBox
+                            x:Name="CpsNumberBox"
+                            Grid.Column="1"
+                            Width="104"
+                            VerticalAlignment="Center"
+                            LargeChange="5"
+                            Maximum="100"
+                            Minimum="1"
+                            SmallChange="1"
+                            SpinButtonPlacementMode="Compact"
+                            Style="{StaticResource FormNumberBoxStyle}"
+                            Value="20"
+                            ValueChanged="CpsNumberBox_ValueChanged" />
                     </Grid>
 
-                    <!-- Random -->
-                    <Grid Grid.Column="1" ColumnSpacing="8">
+                    <Grid Grid.Row="1" ColumnSpacing="12">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-
-                        <TextBlock x:Name="RandomLabel"
-                                   Grid.Column="0"
-                                   Text="Dağılım" 
-                                   FontSize="14"
-                                   FontWeight="SemiBold"
-                                   Foreground="{StaticResource AccentPurpleBrush}"
-                                   VerticalAlignment="Center"
-                                   ToolTipService.ToolTip="Rastgele: CPS'e varyasyon ekler"/>
-                                   
-                        <NumberBox x:Name="RandomNumberBox"
-                                   Grid.Column="1"
-                                   Value="0"
-                                   Minimum="0"
-                                   Maximum="30"
-                                   SpinButtonPlacementMode="Hidden"
-                                   SmallChange="1"
-                                   LargeChange="5"
-                                   ValueChanged="RandomNumberBox_ValueChanged"
-                                   Background="{StaticResource BgCardBrush}"
-                                   BorderBrush="{StaticResource BorderBrush}"
-                                   BorderThickness="1"
-                                   CornerRadius="4"/>
+                        <StackPanel VerticalAlignment="Center" Spacing="2">
+                            <TextBlock
+                                Style="{StaticResource FieldLabelTextStyle}"
+                                Text="Rastgelelik" />
+                            <TextBlock
+                                Style="{StaticResource CaptionTextStyle}"
+                                Text="Aralığa %0-30 varyasyon ekler" />
+                        </StackPanel>
+                        <NumberBox
+                            x:Name="RandomNumberBox"
+                            Grid.Column="1"
+                            Width="104"
+                            VerticalAlignment="Center"
+                            LargeChange="5"
+                            Maximum="30"
+                            Minimum="0"
+                            SmallChange="1"
+                            SpinButtonPlacementMode="Compact"
+                            Style="{StaticResource FormNumberBoxStyle}"
+                            Value="0"
+                            ValueChanged="RandomNumberBox_ValueChanged" />
                     </Grid>
                 </Grid>
             </Border>

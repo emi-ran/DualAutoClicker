@@ -1,25 +1,37 @@
 using Microsoft.UI;
-using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
 using DualAutoClicker.Services;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using WinRT.Interop;
 using Windows.Graphics;
 using Windows.UI;
-using Windows.Foundation;
 
 namespace DualAutoClicker;
 
 public sealed partial class MainWindow : Window
 {
+    private const double StackClickersBelowWidth = 840;
+    private const double HideProfileHintBelowWidth = 980;
+    private const int MinimumWindowWidth = 760;
+    private const int MinimumWindowHeight = 560;
+    private const uint WmGetMinMaxInfo = 0x0024;
+    private static readonly UIntPtr WindowSubclassId = new(1);
+
     private readonly AppWindow _appWindow;
     private readonly SettingsService _settingsService;
     private readonly ClickerService _clickerService;
     private readonly Button[] _profileButtons = new Button[6];
+    private readonly IntPtr _windowHandle;
+    private readonly SubclassProc _windowSubclassProc;
+
+    private bool _isClickersStacked;
 
     public MainWindow()
     {
@@ -29,9 +41,11 @@ public sealed partial class MainWindow : Window
         _clickerService = App.ClickerService;
 
         // Get AppWindow for customization
-        var hWnd = WindowNative.GetWindowHandle(this);
-        var windowId = Win32Interop.GetWindowIdFromWindow(hWnd);
+        _windowHandle = WindowNative.GetWindowHandle(this);
+        var windowId = Win32Interop.GetWindowIdFromWindow(_windowHandle);
         _appWindow = AppWindow.GetFromWindowId(windowId);
+        _windowSubclassProc = WindowSubclassCallback;
+        SetWindowSubclass(_windowHandle, _windowSubclassProc, WindowSubclassId, UIntPtr.Zero);
 
         // Configure window
         ConfigureWindow();
@@ -42,11 +56,17 @@ public sealed partial class MainWindow : Window
         _settingsService.ProfileChanged += OnProfileChanged;
         _clickerService.ClickingStateChanged += OnClickingStateChanged;
         _clickerService.MasterStateChanged += OnMasterStateChanged;
-        
+        _appWindow.Changed += (_, _) => UpdateDragRects();
+
         // Window events for drag rects
         this.Activated += MainWindow_Activated;
         this.SizeChanged += MainWindow_SizeChanged;
-        this.Closed += (_, _) => App.Shutdown();
+        ClickersGrid.SizeChanged += (_, args) => ApplyResponsiveLayout(args.NewSize.Width);
+        this.Closed += (_, _) =>
+        {
+            RemoveWindowSubclass(_windowHandle, _windowSubclassProc, WindowSubclassId);
+            App.Shutdown();
+        };
         AppTitleBar.SizeChanged += AppTitleBar_SizeChanged;
 
         // Load settings to UI
@@ -70,59 +90,77 @@ public sealed partial class MainWindow : Window
 
     private void UpdateDragRects()
     {
-        if (AppWindowTitleBar.IsCustomizationSupported() && _appWindow.TitleBar.ExtendsContentIntoTitleBar && this.Content.XamlRoot != null)
+        if (!AppWindowTitleBar.IsCustomizationSupported() ||
+            !_appWindow.TitleBar.ExtendsContentIntoTitleBar ||
+            this.Content.XamlRoot == null)
         {
-            try
+            return;
+        }
+
+        try
+        {
+            double scale = this.Content.XamlRoot.RasterizationScale;
+            var titleBar = AppTitleBar;
+            var systemTitleBar = _appWindow.TitleBar;
+
+            double leftInset = systemTitleBar.LeftInset / scale;
+            double rightInset = systemTitleBar.RightInset / scale;
+            LeftCaptionInsetColumn.Width = new GridLength(leftInset);
+            RightCaptionInsetColumn.Width = new GridLength(rightInset);
+
+            int titleBarHeight = (int)Math.Round(titleBar.ActualHeight * scale);
+            int dragX = (int)Math.Round(leftInset * scale);
+            int dragWidth = (int)Math.Round(Math.Max(0, (titleBar.ActualWidth - leftInset - rightInset) * scale));
+
+            if (titleBarHeight > 0 && dragWidth > 0)
             {
-                double scale = this.Content.XamlRoot.RasterizationScale;
-                var titleBar = AppTitleBar;
-                
-                // Profil butonlarının pozisyonunu bul
-                var transform = ProfileButtons.TransformToVisual(null);
-                var bounds = transform.TransformBounds(new Rect(0, 0, ProfileButtons.ActualWidth, ProfileButtons.ActualHeight));
-                
-                int titleBarHeight = (int)(titleBar.ActualHeight * scale);
-                int profileX = (int)(bounds.X * scale);
-                int profileWidth = (int)(bounds.Width * scale);
-                int windowWidth = (int)(titleBar.ActualWidth * scale);
-
-                var rects = new List<RectInt32>();
-
-                // 1. Sol taraf (Logo dahil, butonlara kadar)
-                // Eğer butonların solunda boşluk varsa orası sürüklenebilir olsun
-                // Not: Logoya tıklanabilir olmasını istemiyorsak burayı drag alanı yaparız.
-                if (profileX > 0)
-                {
-                    rects.Add(new RectInt32(0, 0, profileX, titleBarHeight));
-                }
-
-                // 2. Sağ taraf (Butonlardan sonra, pencere kontrollerine kadar)
-                // Window controls (Minimize/Close) sağ üstte. Yaklaşık 100px (scale ile çarpılmalı)
-                // SystemOverlayLeftInset ve SystemOverlayRightInset ile daha doğru hesaplanabilir ama şimdilik manuel.
-                int rightInset = (int)(90 * scale); // Minimize + Close butonları
-                
-                int startX = profileX + profileWidth;
-                int width = windowWidth - startX - rightInset;
-
-                if (width > 0)
-                {
-                    rects.Add(new RectInt32(startX, 0, width, titleBarHeight));
-                }
-
-                _appWindow.TitleBar.SetDragRectangles(rects.ToArray());
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"UpdateDragRects failed: {ex}");
+                systemTitleBar.SetDragRectangles(new[] { new RectInt32(dragX, 0, dragWidth, titleBarHeight) });
             }
         }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"UpdateDragRects failed: {ex}");
+        }
+    }
+
+    private void ApplyResponsiveLayout(double width)
+    {
+        bool stacked = width < StackClickersBelowWidth;
+
+        if (stacked != _isClickersStacked)
+        {
+            _isClickersStacked = stacked;
+
+            if (stacked)
+            {
+                ClickersGrid.ColumnDefinitions[1].Width = new GridLength(0);
+                ClickersGrid.ColumnSpacing = 0;
+                Grid.SetColumn(RightClickPanel, 0);
+                Grid.SetRow(RightClickPanel, 1);
+            }
+            else
+            {
+                ClickersGrid.ColumnDefinitions[1].Width = new GridLength(1, GridUnitType.Star);
+                ClickersGrid.ColumnSpacing = 16;
+                Grid.SetColumn(RightClickPanel, 1);
+                Grid.SetRow(RightClickPanel, 0);
+            }
+        }
+
+        ProfileHint.Visibility = width >= HideProfileHintBelowWidth
+            ? Visibility.Visible
+            : Visibility.Collapsed;
     }
 
     private void ConfigureWindow()
     {
-        // Set initial size - must be wide enough for both panels
-        int windowWidth = 920;
-        int windowHeight = 650;
+        var displayArea = DisplayArea.GetFromWindowId(_appWindow.Id, DisplayAreaFallback.Primary);
+        var workArea = displayArea.WorkArea;
+
+        // Keep the window inside the work area on small displays.
+        int windowWidth = Math.Min(1080, Math.Max(MinimumWindowWidth, workArea.Width - 80));
+        int windowHeight = Math.Min(760, Math.Max(MinimumWindowHeight, workArea.Height - 80));
+
         _appWindow.Resize(new SizeInt32(windowWidth, windowHeight));
 
         // Set window icon
@@ -133,15 +171,72 @@ public sealed partial class MainWindow : Window
         }
 
         // Center window on screen
-        var displayArea = DisplayArea.GetFromWindowId(_appWindow.Id, DisplayAreaFallback.Primary);
-        var workArea = displayArea.WorkArea;
-        var x = (workArea.Width - windowWidth) / 2;
-        var y = (workArea.Height - windowHeight) / 2;
+        var x = workArea.X + (workArea.Width - windowWidth) / 2;
+        var y = workArea.Y + (workArea.Height - windowHeight) / 2;
         _appWindow.Move(new PointInt32(x, y));
 
-        // Set title
         _appWindow.Title = "Dual AutoClicker";
     }
+
+    private IntPtr WindowSubclassCallback(
+        IntPtr hWnd,
+        uint message,
+        IntPtr wParam,
+        IntPtr lParam,
+        UIntPtr subclassId,
+        UIntPtr referenceData)
+    {
+        if (message == WmGetMinMaxInfo && lParam != IntPtr.Zero)
+        {
+            var minMaxInfo = Marshal.PtrToStructure<MinMaxInfo>(lParam);
+            double scale = GetDpiForWindow(hWnd) / 96d;
+            minMaxInfo.MinTrackSize.X = Math.Max(minMaxInfo.MinTrackSize.X, (int)Math.Ceiling(MinimumWindowWidth * scale));
+            minMaxInfo.MinTrackSize.Y = Math.Max(minMaxInfo.MinTrackSize.Y, (int)Math.Ceiling(MinimumWindowHeight * scale));
+            Marshal.StructureToPtr(minMaxInfo, lParam, false);
+            return IntPtr.Zero;
+        }
+
+        return DefSubclassProc(hWnd, message, wParam, lParam);
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct NativePoint
+    {
+        public int X;
+        public int Y;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MinMaxInfo
+    {
+        public NativePoint Reserved;
+        public NativePoint MaxSize;
+        public NativePoint MaxPosition;
+        public NativePoint MinTrackSize;
+        public NativePoint MaxTrackSize;
+    }
+
+    private delegate IntPtr SubclassProc(
+        IntPtr hWnd,
+        uint message,
+        IntPtr wParam,
+        IntPtr lParam,
+        UIntPtr subclassId,
+        UIntPtr referenceData);
+
+    [DllImport("comctl32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool SetWindowSubclass(IntPtr hWnd, SubclassProc subclassProc, UIntPtr subclassId, UIntPtr referenceData);
+
+    [DllImport("comctl32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool RemoveWindowSubclass(IntPtr hWnd, SubclassProc subclassProc, UIntPtr subclassId);
+
+    [DllImport("comctl32.dll")]
+    private static extern IntPtr DefSubclassProc(IntPtr hWnd, uint message, IntPtr wParam, IntPtr lParam);
+
+    [DllImport("user32.dll")]
+    private static extern uint GetDpiForWindow(IntPtr hWnd);
 
     private void SetupTitleBar()
     {
@@ -154,13 +249,12 @@ public sealed partial class MainWindow : Window
         {
             var titleBar = _appWindow.TitleBar;
             titleBar.ExtendsContentIntoTitleBar = true;
-            
-            // Set button colors
+
             titleBar.ButtonBackgroundColor = Colors.Transparent;
             titleBar.ButtonInactiveBackgroundColor = Colors.Transparent;
-            titleBar.ButtonHoverBackgroundColor = Color.FromArgb(30, 255, 255, 255);
-            titleBar.ButtonPressedBackgroundColor = Color.FromArgb(20, 255, 255, 255);
-            titleBar.ButtonForegroundColor = Color.FromArgb(255, 140, 140, 160);
+            titleBar.ButtonHoverBackgroundColor = Color.FromArgb(24, 255, 255, 255);
+            titleBar.ButtonPressedBackgroundColor = Color.FromArgb(16, 255, 255, 255);
+            titleBar.ButtonForegroundColor = Color.FromArgb(255, 168, 178, 191);
             titleBar.ButtonHoverForegroundColor = Colors.White;
         }
     }
@@ -178,11 +272,15 @@ public sealed partial class MainWindow : Window
             var btn = new Button
             {
                 Content = profile.Name,
-                Style = index == activeIndex 
+                Style = index == activeIndex
                     ? (Style)Application.Current.Resources["ActiveProfileButtonStyle"]
                     : (Style)Application.Current.Resources["ProfileButtonStyle"],
                 Tag = index
             };
+
+            AutomationProperties.SetName(btn, $"{profile.Name}, profil {index + 1}");
+            AutomationProperties.SetHelpText(btn, index == activeIndex ? "Seçili profil" : "Profili seç");
+            ToolTipService.SetToolTip(btn, "Sol tık: profili seç · Sağ tık: yeniden adlandır");
 
             btn.Click += (s, e) =>
             {
@@ -234,6 +332,9 @@ public sealed partial class MainWindow : Window
             btn.Style = i == activeIndex
                 ? (Style)Application.Current.Resources["ActiveProfileButtonStyle"]
                 : (Style)Application.Current.Resources["ProfileButtonStyle"];
+
+            AutomationProperties.SetName(btn, $"{profile.Name}, profil {i + 1}");
+            AutomationProperties.SetHelpText(btn, i == activeIndex ? "Seçili profil" : "Profili seç");
         }
     }
 
@@ -245,8 +346,11 @@ public sealed partial class MainWindow : Window
         {
             Text = profile.Name,
             MaxLength = 12,
-            PlaceholderText = "Profil adı"
+            PlaceholderText = "Profil adı",
+            MinWidth = 300,
+            Style = (Style)Application.Current.Resources["FormTextBoxStyle"]
         };
+        AutomationProperties.SetName(textBox, "Profil adı");
 
         var dialog = new ContentDialog
         {
@@ -255,7 +359,19 @@ public sealed partial class MainWindow : Window
             PrimaryButtonText = "Kaydet",
             CloseButtonText = "İptal",
             DefaultButton = ContentDialogButton.Primary,
-            XamlRoot = this.Content.XamlRoot
+            XamlRoot = this.Content.XamlRoot,
+            Background = ThemeBrush("BgElevatedBrush"),
+            BorderBrush = ThemeBrush("BorderBrush"),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(12),
+            PrimaryButtonStyle = (Style)Application.Current.Resources["AccentButtonStyle"],
+            CloseButtonStyle = (Style)Application.Current.Resources["SecondaryButtonStyle"]
+        };
+
+        dialog.Opened += (_, _) =>
+        {
+            textBox.Focus(FocusState.Programmatic);
+            textBox.SelectAll();
         };
 
         var result = await dialog.ShowAsync();
@@ -280,8 +396,7 @@ public sealed partial class MainWindow : Window
 
         // Load general settings
         SettingsPanel.LoadSettings(_settingsService);
-        RootGrid.Opacity = _clickerService.MasterEnabled ? 1.0 : 0.5;
-
+        UpdateMasterVisuals(_clickerService.MasterEnabled);
     }
 
     private void OnProfileChanged(int profileIndex)
@@ -305,40 +420,20 @@ public sealed partial class MainWindow : Window
 
     private void OnMasterStateChanged(bool enabled)
     {
-        DispatcherQueue.TryEnqueue(() =>
-        {
-            // Update UI based on master state
-            SettingsPanel.UpdateMasterState(enabled);
-            RootGrid.Opacity = enabled ? 1.0 : 0.5;
-        });
+        DispatcherQueue.TryEnqueue(() => UpdateMasterVisuals(enabled));
     }
 
-
-    private void MinimizeButton_Click(object sender, RoutedEventArgs e)
+    private void UpdateMasterVisuals(bool enabled)
     {
-        var presenter = _appWindow.Presenter as OverlappedPresenter;
-        presenter?.Minimize();
+        MasterStatusText.Text = enabled ? "Etkin" : "Duraklatıldı";
+        MasterStatusDot.Fill = ThemeBrush(enabled ? "SuccessBrush" : "WarningBrush");
+        MasterBanner.Visibility = enabled ? Visibility.Collapsed : Visibility.Visible;
+        ContentRoot.Opacity = enabled ? 1.0 : 0.55;
+
+        AutomationProperties.SetName(MasterStatusPill, $"Sistem durumu: {(enabled ? "etkin" : "duraklatıldı")}");
+
+        SettingsPanel.UpdateMasterState(enabled);
     }
 
-    private void MaximizeButton_Click(object sender, RoutedEventArgs e)
-    {
-        if (_appWindow.Presenter is OverlappedPresenter presenter)
-        {
-            if (presenter.State == OverlappedPresenterState.Maximized)
-            {
-                presenter.Restore();
-            }
-            else
-            {
-                presenter.Maximize();
-            }
-        }
-    }
-
-    private void CloseButton_Click(object sender, RoutedEventArgs e)
-    {
-        // There is no tray icon, so "close" must really exit the app.
-        // Shutdown unhooks the global hooks before the process goes away.
-        App.Shutdown();
-    }
+    private static Brush ThemeBrush(string key) => (Brush)Application.Current.Resources[key];
 }

@@ -8,134 +8,260 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <Border Background="{StaticResource BgCardBrush}" 
-            CornerRadius="{StaticResource MediumRadius}"
-            Padding="20"
-            BorderThickness="0,3,0,0">
-        <Border.BorderBrush>
-            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                <GradientStop Color="{StaticResource AccentOrangeColor}" Offset="0"/>
-                <GradientStop Color="{StaticResource AccentPinkColor}" Offset="1"/>
-            </LinearGradientBrush>
-        </Border.BorderBrush>
-
-        <Grid RowSpacing="20">
+    <Border Style="{StaticResource CardPanelStyle}">
+        <Grid RowSpacing="16">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <!-- Title -->
-            <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8">
-                <FontIcon Glyph="&#xE713;" FontSize="20" Foreground="{StaticResource TextPrimaryBrush}"/>
-                <TextBlock Text="AYARLAR" Style="{StaticResource TitleTextStyle}"/>
-            </StackPanel>
-
-            <!-- Settings Row -->
-            <Grid Grid.Row="1" ColumnSpacing="16">
+            <!-- Header -->
+            <Grid Grid.Row="0" ColumnSpacing="12">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
-                <!-- Master Control Section -->
-                <Border Grid.Column="0" 
-                        Background="{StaticResource BgInputBrush}" 
-                        CornerRadius="{StaticResource SmallRadius}"
-                        Padding="16,12">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-
-                        <FontIcon Grid.Column="0" Glyph="&#xE72E;" FontSize="18" 
-                                  Foreground="{StaticResource AccentOrangeBrush}"
-                                  Margin="0,0,12,0" VerticalAlignment="Center"/>
-
-                        <CheckBox x:Name="MasterToggleCheckBox" 
-                                  Grid.Column="1"
-                                  Content="Master Kontrol"
-                                  Foreground="{StaticResource TextPrimaryBrush}"
-                                  FontWeight="SemiBold"
-                                  ToolTipService.ToolTip="Tüm makroları tek tuşla kontrol edin"
-                                  Checked="MasterToggleCheckBox_Changed"
-                                  Unchecked="MasterToggleCheckBox_Changed"
-                                  VerticalAlignment="Center"/>
-
-                        <Border Grid.Column="2" Style="{StaticResource KeyLabelStyle}" Margin="8,0">
-                            <TextBlock x:Name="MasterKeyLabel" 
-                                       Text="F8" 
-                                       FontSize="13"
-                                       FontWeight="Bold"
-                                       Foreground="{StaticResource AccentOrangeBrush}"
-                                       HorizontalAlignment="Center"/>
-                        </Border>
-
-                        <Button x:Name="MasterKeyButton" 
-                                Grid.Column="3"
-                                Content="Seç"
-                                Padding="12,6"
-                                Click="MasterKeyButton_Click">
-                            <Button.Background>
-                                <SolidColorBrush Color="{StaticResource AccentOrangeColor}"/>
-                            </Button.Background>
-                        </Button>
-                    </Grid>
+                <Border
+                    Grid.Column="0"
+                    VerticalAlignment="Center"
+                    Style="{StaticResource IconTileStyle}">
+                    <FontIcon
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        FontSize="17"
+                        Foreground="{StaticResource AccentTextBrush}"
+                        Glyph="&#xE713;" />
                 </Border>
 
-                <!-- Window Targeting Section -->
-                <Border Grid.Column="1" 
-                        Background="{StaticResource BgInputBrush}" 
-                        CornerRadius="{StaticResource SmallRadius}"
-                        Padding="16,12">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-
-                        <FontIcon Grid.Column="0" Glyph="&#xE7B3;" FontSize="18" 
-                                  Foreground="{StaticResource AccentCyanBrush}"
-                                  Margin="0,0,12,0" VerticalAlignment="Center"/>
-
-                        <Button x:Name="WindowPickerButton" 
-                                Grid.Column="1"
-                                Content="Uygulama Seç"
-                                Margin="0,0,12,0"
-                                Style="{StaticResource AccentButtonStyle}"
-                                Click="WindowPickerButton_Click"/>
-
-                        <TextBlock x:Name="WindowStatusLabel" 
-                                   Grid.Column="2"
-                                   Text="Tüm Uygulamalar"
-                                   Style="{StaticResource BodyTextStyle}"
-                                   VerticalAlignment="Center"
-                                   TextTrimming="CharacterEllipsis"/>
-                    </Grid>
-                </Border>
+                <StackPanel
+                    Grid.Column="1"
+                    VerticalAlignment="Center"
+                    Spacing="2">
+                    <TextBlock
+                        Style="{StaticResource CardTitleTextStyle}"
+                        Text="Ayarlar" />
+                    <TextBlock
+                        Style="{StaticResource CaptionTextStyle}"
+                        Text="Sistem entegrasyonu ve genel davranış" />
+                </StackPanel>
             </Grid>
 
-            <!-- Bottom Row -->
-            <Grid Grid.Row="2">
+            <Border
+                Grid.Row="1"
+                Height="1"
+                Background="{StaticResource BorderSubtleBrush}" />
+
+            <!-- Master control -->
+            <Grid Grid.Row="2" ColumnSpacing="16">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <!-- Startup Checkbox -->
-                <CheckBox x:Name="StartupCheckBox" 
-                          Grid.Column="0"
-                          Content="Windows ile başlat"
-                          Foreground="{StaticResource TextPrimaryBrush}"
-                          Checked="StartupCheckBox_Changed"
-                          Unchecked="StartupCheckBox_Changed"/>
+                <Border
+                    Grid.Column="0"
+                    VerticalAlignment="Top"
+                    Background="{StaticResource BgInputBrush}"
+                    CornerRadius="{StaticResource SmallRadius}"
+                    Style="{StaticResource IconTileStyle}">
+                    <FontIcon
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        FontSize="16"
+                        Foreground="{StaticResource TextSecondaryBrush}"
+                        Glyph="&#xE72E;" />
+                </Border>
 
+                <StackPanel Grid.Column="1" Spacing="3">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            Style="{StaticResource SettingTitleTextStyle}"
+                            Text="Master kontrol" />
+                        <StackPanel
+                            Margin="2,0,0,0"
+                            VerticalAlignment="Center"
+                            Orientation="Horizontal"
+                            Spacing="6">
+                            <Ellipse
+                                x:Name="MasterStateDot"
+                                Width="6"
+                                Height="6"
+                                VerticalAlignment="Center"
+                                Fill="{StaticResource SuccessBrush}" />
+                            <TextBlock
+                                x:Name="MasterStateText"
+                                VerticalAlignment="Center"
+                                AutomationProperties.LiveSetting="Polite"
+                                FontSize="11.5"
+                                Foreground="{StaticResource SuccessBrush}"
+                                Text="Etkin" />
+                        </StackPanel>
+                    </StackPanel>
+                    <TextBlock
+                        Style="{StaticResource CaptionTextStyle}"
+                        Text="Tüm otomasyonu tek tuşla duraklatın." />
 
+                    <StackPanel Margin="0,5,0,0" Orientation="Horizontal" Spacing="8">
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            Style="{StaticResource CaptionTextStyle}"
+                            Text="Tuş" />
+                        <Border
+                            VerticalAlignment="Center"
+                            Style="{StaticResource KeyLabelStyle}">
+                            <TextBlock
+                                x:Name="MasterKeyLabel"
+                                Style="{StaticResource KeyTextStyle}"
+                                Text="F8" />
+                        </Border>
+                        <Button
+                            x:Name="MasterKeyButton"
+                            VerticalAlignment="Center"
+                            AutomationProperties.Name="Master kontrol tuşunu değiştir"
+                            Click="MasterKeyButton_Click"
+                            Content="Değiştir"
+                            Style="{StaticResource SecondaryButtonStyle}" />
+                    </StackPanel>
+
+                    <TextBlock
+                        x:Name="CaptureHint"
+                        Margin="0,6,0,0"
+                        Foreground="{StaticResource AccentTextBrush}"
+                        Style="{StaticResource CaptionTextStyle}"
+                        Text="Bir tuşa veya fare düğmesine basın · İptal: Esc"
+                        Visibility="Collapsed" />
+                </StackPanel>
+
+                <StackPanel
+                    Grid.Column="2"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Spacing="2">
+                    <TextBlock
+                        HorizontalAlignment="Center"
+                        Style="{StaticResource CaptionTextStyle}"
+                        Text="Kısayol" />
+                    <ToggleSwitch
+                        x:Name="MasterToggleCheckBox"
+                        Width="52"
+                        HorizontalAlignment="Center"
+                        AutomationProperties.Name="Master kontrol kısayolunu etkinleştir"
+                        OffContent=""
+                        OnContent=""
+                        Style="{StaticResource CompactToggleSwitchStyle}"
+                        Toggled="MasterToggleCheckBox_Changed" />
+                </StackPanel>
+
+            </Grid>
+
+            <Border
+                Grid.Row="3"
+                Height="1"
+                Background="{StaticResource BorderSubtleBrush}" />
+
+            <!-- Window targeting -->
+            <Grid Grid.Row="4" ColumnSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <Border
+                    Grid.Column="0"
+                    VerticalAlignment="Top"
+                    Background="{StaticResource BgInputBrush}"
+                    CornerRadius="{StaticResource SmallRadius}"
+                    Style="{StaticResource IconTileStyle}">
+                    <FontIcon
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        FontSize="16"
+                        Foreground="{StaticResource TextSecondaryBrush}"
+                        Glyph="&#xE7B3;" />
+                </Border>
+
+                <StackPanel Grid.Column="1" Spacing="2">
+                    <TextBlock
+                        Style="{StaticResource SettingTitleTextStyle}"
+                        Text="Hedef uygulama" />
+                    <TextBlock
+                        Style="{StaticResource CaptionTextStyle}"
+                        Text="Otomasyon yalnızca seçili uygulamalarda çalışır." />
+                    <TextBlock
+                        x:Name="WindowStatusLabel"
+                        Margin="0,4,0,0"
+                        Foreground="{StaticResource AccentTextBrush}"
+                        Style="{StaticResource BodyTextStyle}"
+                        Text="Tüm uygulamalar"
+                        TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+
+                <Button
+                    x:Name="WindowPickerButton"
+                    Grid.Column="2"
+                    VerticalAlignment="Center"
+                    AutomationProperties.Name="Hedef uygulamaları seç"
+                    Click="WindowPickerButton_Click"
+                    Content="Uygulama seç"
+                    Style="{StaticResource SecondaryButtonStyle}" />
+            </Grid>
+
+            <Border
+                Grid.Row="5"
+                Height="1"
+                Background="{StaticResource BorderSubtleBrush}" />
+
+            <!-- Startup -->
+            <Grid Grid.Row="6" ColumnSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <Border
+                    Grid.Column="0"
+                    VerticalAlignment="Top"
+                    Background="{StaticResource BgInputBrush}"
+                    CornerRadius="{StaticResource SmallRadius}"
+                    Style="{StaticResource IconTileStyle}">
+                    <FontIcon
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        FontSize="16"
+                        Foreground="{StaticResource TextSecondaryBrush}"
+                        Glyph="&#xE7E8;" />
+                </Border>
+
+                <StackPanel Grid.Column="1" Spacing="2">
+                    <TextBlock
+                        Style="{StaticResource SettingTitleTextStyle}"
+                        Text="Windows ile başlat" />
+                    <TextBlock
+                        Style="{StaticResource CaptionTextStyle}"
+                        Text="Oturum açılışında arka planda başlar." />
+                </StackPanel>
+
+                <ToggleSwitch
+                    x:Name="StartupCheckBox"
+                    Grid.Column="2"
+                    Width="52"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    AutomationProperties.Name="Windows ile başlat"
+                    OffContent=""
+                    OnContent=""
+                    Style="{StaticResource CompactToggleSwitchStyle}"
+                    Toggled="StartupCheckBox_Changed" />
             </Grid>
         </Grid>
     </Border>

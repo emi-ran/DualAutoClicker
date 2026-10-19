@@ -1,16 +1,15 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Media;
 using DualAutoClicker.Models;
-using DualAutoClicker.Services;
 using DualAutoClicker.Native;
-using Windows.UI;
+using DualAutoClicker.Services;
 
 namespace DualAutoClicker.Controls;
 
 public sealed partial class MacroPanel : UserControl
 {
     private KeyboardMacroSettings? _settings;
+    private bool _isLoading;
     private readonly KeyBindingCapture _keyBindingCapture = new();
 
     public MacroPanel()
@@ -26,21 +25,29 @@ public sealed partial class MacroPanel : UserControl
 
     public void LoadSettings(SettingsService settingsService)
     {
-        _settings = settingsService.Settings.KeyboardMacro;
+        _isLoading = true;
+        try
+        {
+            _settings = settingsService.Settings.KeyboardMacro;
 
-        EnabledCheckBox.IsChecked = _settings.Enabled;
-        KeyLabel.Text = _settings.FullKeyName; // Use FullKeyName to show modifiers
-        BaseTextBox.Text = _settings.BaseText;
-        MinCharsBox.Value = _settings.MinRandomChars;
-        MaxCharsBox.Value = _settings.MaxRandomChars;
-        JunkCharsBox.Text = _settings.JunkCharacters;
+            EnabledCheckBox.IsOn = _settings.Enabled;
+            KeyLabel.Text = _settings.FullKeyName;
+            BaseTextBox.Text = _settings.BaseText;
+            MinCharsBox.Value = _settings.MinRandomChars;
+            MaxCharsBox.Value = _settings.MaxRandomChars;
+            JunkCharsBox.Text = _settings.JunkCharacters;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
     }
 
     private void EnabledCheckBox_Changed(object sender, RoutedEventArgs e)
     {
-        if (_settings == null) return;
+        if (_isLoading || _settings == null) return;
 
-        _settings.Enabled = EnabledCheckBox.IsChecked == true;
+        _settings.Enabled = EnabledCheckBox.IsOn;
         App.SettingsService.Save();
     }
 
@@ -57,8 +64,8 @@ public sealed partial class MacroPanel : UserControl
 
     private void StartKeyBinding()
     {
-        ChangeKeyButton.Content = "...";
-        ChangeKeyButton.Background = new SolidColorBrush(Color.FromArgb(255, 180, 130, 0));
+        ChangeKeyButton.Content = "Tuşa basın…";
+        CaptureHint.Visibility = Visibility.Visible;
         _keyBindingCapture.Start(OnBindingMousePressed, OnBindingKeyPressed);
     }
 
@@ -69,8 +76,7 @@ public sealed partial class MacroPanel : UserControl
         DispatcherQueue.TryEnqueue(() =>
         {
             ChangeKeyButton.Content = "Seç";
-            var greenColor = (Color)Application.Current.Resources["AccentGreenColor"];
-            ChangeKeyButton.Background = new SolidColorBrush(greenColor);
+            CaptureHint.Visibility = Visibility.Collapsed;
         });
     }
 
@@ -88,7 +94,7 @@ public sealed partial class MacroPanel : UserControl
             _settings.KeyType = "mouse";
             _settings.KeyCode = code;
             _settings.KeyName = name;
-            KeyLabel.Text = _settings.FullKeyName; // Show full combo like "Alt+MB4"
+            KeyLabel.Text = _settings.FullKeyName;
             App.SettingsService.Save();
 
             StopKeyBinding();
@@ -125,7 +131,7 @@ public sealed partial class MacroPanel : UserControl
                     _settings.RequireCtrl = false;
                     _settings.Enabled = false;
                     KeyLabel.Text = "Yok";
-                    EnabledCheckBox.IsChecked = false;
+                    EnabledCheckBox.IsOn = false;
                     App.SettingsService.Save();
                 }
                 StopKeyBinding();
@@ -142,7 +148,7 @@ public sealed partial class MacroPanel : UserControl
             _settings.KeyType = "keyboard";
             _settings.KeyCode = code;
             _settings.KeyName = name;
-            KeyLabel.Text = _settings.FullKeyName; // Show full combo like "Alt+Shift+3"
+            KeyLabel.Text = _settings.FullKeyName;
             App.SettingsService.Save();
 
             StopKeyBinding();
@@ -151,7 +157,7 @@ public sealed partial class MacroPanel : UserControl
 
     private void BaseTextBox_TextChanged(object sender, TextChangedEventArgs e)
     {
-        if (_settings == null) return;
+        if (_isLoading || _settings == null) return;
 
         _settings.BaseText = BaseTextBox.Text;
         App.SettingsService.Save();
@@ -159,7 +165,7 @@ public sealed partial class MacroPanel : UserControl
 
     private void MinCharsBox_ValueChanged(NumberBox sender, NumberBoxValueChangedEventArgs args)
     {
-        if (_settings == null) return;
+        if (_isLoading || _settings == null) return;
         if (double.IsNaN(args.NewValue)) return;
 
         _settings.MinRandomChars = (int)args.NewValue;
@@ -176,7 +182,7 @@ public sealed partial class MacroPanel : UserControl
 
     private void MaxCharsBox_ValueChanged(NumberBox sender, NumberBoxValueChangedEventArgs args)
     {
-        if (_settings == null) return;
+        if (_isLoading || _settings == null) return;
         if (double.IsNaN(args.NewValue)) return;
 
         _settings.MaxRandomChars = (int)args.NewValue;
@@ -193,7 +199,7 @@ public sealed partial class MacroPanel : UserControl
 
     private void JunkCharsBox_TextChanged(object sender, TextChangedEventArgs e)
     {
-        if (_settings == null) return;
+        if (_isLoading || _settings == null) return;
 
         _settings.JunkCharacters = JunkCharsBox.Text;
         App.SettingsService.Save();

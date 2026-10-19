@@ -2,6 +2,12 @@
 
 Bu dosya, yapılan polish çalışmasının güncel durumunu özetler.
 
+## 2026-10-20 - v3.2.5 release notu
+
+- Arayuz yenilemesi, responsive duzen, kart/anahtar hizalari ve pencere boyutu duzeltmeleri README ve CHANGELOG'da aciklandi.
+- Proje surumu, README rozeti ve release changelog basligi 3.2.5 olarak hizalandi.
+- `dotnet publish DualAutoClicker.csproj -c Release -r win-x64 --self-contained true` basarili. Imzali installer CI, GitHub release yayinlandiktan sonra calisacak; kullanici ortaminda manuel UI smoke testi yapilmadi.
+
 ## Tamamlananlar
 
 - [x] Çoklu uygulama hedefleme düzeltildi
@@ -26,7 +32,7 @@ Bu dosya, yapılan polish çalışmasının güncel durumunu özetler.
 
 - [x] README sürümü güncellendi
   Konum: `README.md`
-  Sonuç: Badge sürümü proje sürümüyle `3.2.1` olarak hizalandı.
+  Sonuç: Badge sürümü proje sürümüyle `3.2.1` olarak hizalandı (ilk polish raporu; tarihsel). Güncel sürüm `3.2.5` README ve proje dosyasında eşitlendi.
 
 - [x] Kullanılmayan icon kopyası kaldırıldı
   Konum: `Resources/icon.ico`

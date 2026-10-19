@@ -5,11 +5,11 @@ Bağımsız sol ve sağ tık ayarlarına sahip, 6 profil destekli, yüksek perfo
 ![Platform](https://img.shields.io/badge/Platform-Windows-blue)
 ![.NET](https://img.shields.io/badge/.NET-8.0-purple)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Version](https://img.shields.io/badge/Version-3.2.4-orange)
+![Version](https://img.shields.io/badge/Version-3.2.5-orange)
 
 ## ✨ Özellikler
 
-- **🎨 Modern UI** - Göz yormayan karanlık tema ve şık tasarım.
+- **🎨 Modern UI** - Sakin koyu tema, tek vurgu rengi ve net görsel hiyerarşi. Başlık çubuğunda master durumu ve profil şeridi bulunur.
 - **📁 6 Profil Desteği** - Farklı oyunlar için farklı ayarlar kaydedin, tek tıkla profiller arası geçiş yapın.
 - **🎯 Çift Tıklama Desteği** - Sol ve sağ tık için tamamen bağımsız ayarlar.
 - **⌨️ Esnek Tuş Atama** - Mouse butonları (MB3, MB4, MB5) veya klavye tuşları ile tam uyum.
@@ -77,7 +77,7 @@ gh secret set SIGNING_PFX_PASSWORD --repo emi-ran/DualAutoClicker
 
 İkinci komut parolayı gizli olarak sorar. Parolayı komuta, kaynak koduna veya `.env` dosyasına yazmak gerekmez. PFX Base64 değeri GitHub'ın secret başına 48 KB sınırına sığmalıdır. `INSTALLER_APP_ID` bir kez oluşturulur; eski bir installer serisini devam ettiriyorsanız onun `AppId` GUID'ini kullanın. Rastgele GUID'i her release'te değiştirmeyin. CI kurulumu için oluşturulan GUID, eski yerel installer'ların rastgele kimlikleriyle kendiliğinden eşleşmez.
 
-Sürüm çıkarırken `.csproj` içindeki `Version`, README sürümü ve CHANGELOG güncellenmeli; tag örneğin `v3.2.5`, proje sürümü `3.2.5` olmalıdır. Ön sürümler için `v3.2.5-rc.1` ve `3.2.5-rc.1` de desteklenir. Tag ile proje sürümü uyuşmazsa akış durur. Workflow'u içeren commit yeni release tag'inde bulunmalıdır.
+Sürüm çıkarırken `.csproj` içindeki `Version`, README sürümü ve CHANGELOG güncellenmeli; tag örneğin `v3.2.6`, proje sürümü `3.2.6` olmalıdır. Ön sürümler için `v3.2.6-rc.1` ve `3.2.6-rc.1` de desteklenir. Tag ile proje sürümü uyuşmazsa akış durur. Workflow'u içeren commit yeni release tag'inde bulunmalıdır.
 
 CI, sertifikayı runner'ın geçici klasöründe kullanır ve iş bitiminde siler. Eksik secret, imzalama veya imza kontrolü hatasında installer yüklenmez. Runner sertifika zincirine güvenmiyorsa `NotTrusted`/`UnknownError` durumu ancak beklenen imzalayan sertifika ve zaman damgası eşleştiğinde kabul edilir; bu, Windows/SmartScreen güveni sağlandığı anlamına gelmez. Runner'a güvenilen kök sertifika yüklenmez. Yerel imzalamada da parola `SIGNING_PFX_PASSWORD` ortam değişkeninden okunabilir; mevcut `--cert-pass` seçeneği desteklenmeye devam eder.
 
@@ -85,30 +85,35 @@ CI, sertifikayı runner'ın geçici klasöründe kullanır ve iş bitiminde sile
 
 ### Profiller
 
-Uygulamanın üst kısmında 6 profil bulunur. Her profil kendi ayarlarını saklar:
+Uygulamanın başlık çubuğunun altındaki profil şeridinde 6 profil bulunur. Seçili profil vurgu rengiyle işaretlenir ve her profil kendi ayarlarını saklar:
 
-- Profil seçmek için ilgili profile **sol tıklayın**
+- Profil seçmek için ilgili profile **sol tıklayın** (klavyeyle seçmek için Tab ile odaklayıp Enter'a basın)
 - Profil adını değiştirmek için **sağ tıklayın**
 
 ### Tıklama Ayarları
 
-- **SOL/SAĞ TIK**: İstediğiniz tarafı etkinleştirin.
-- **DEĞİŞTİR**: Aktivasyon tuşunu belirleyin (Klavye veya Mouse).
-- **MOD**: Makronun basılı tutunca mı yoksa Aç/Kapat (tıkla-başlat/tıkla-durdur) şeklinde mi çalışacağını seçin.
-- **CPS & RND**: Tıklama hızını ve rastgelelik oranını belirleyin.
+Başlık çubuğunun altında **Sol tık** ve **Sağ tık** kartları yan yana durur. Pencere daraldığında kartlar alt alta geçer.
+
+- **Sol tık / Sağ tık**: İstediğiniz tarafı kart başlığındaki anahtarla etkinleştirin.
+- **Değiştir**: Etkinleştirme tuşunu belirleyin (klavye veya fare). Yakalama sırasında ekrandaki yönergeyi izleyin; **Esc** iptal eder.
+- **Çalışma modu**: Makronun basılı tutunca mı yoksa Aç/Kapat (tıkla-başlat/tıkla-durdur) şeklinde mi çalışacağını seçin.
+- **Tıklama hızı & Rastgelelik**: CPS değerini ve %0-30 arası varyasyon oranını belirleyin.
+- Kart başlığındaki durum göstergesi **Hazır**, **Tıklanıyor** veya **Kapalı** durumunu gösterir.
 
 ### Metin Makrosu
 
-- **Aktivasyon Tuşu**: Klavye veya mouse ile atanır. Tuşu atarken Alt/Ctrl/Shift basılıysa kombinasyon olarak kaydedilir (`Alt+3` gibi).
+**Klavye makrosu** kartından yönetilir.
+
+- **Etkinleştirme tuşu**: Klavye veya mouse ile atanır. Tuşu atarken Alt/Ctrl/Shift basılıysa kombinasyon olarak kaydedilir (`Alt+3` gibi).
 - **Tam eşleşme**: Makro yalnızca kaydedilen modifier'ların tamamı basılıyken çalışır. `Alt+3` makrosu Ctrl de basılıyken tetiklenmez; böylece fazladan modifier hedef uygulamaya sızmaz.
-- **Metin**: Gönderilecek metin. En fazla 200 karakter enjekte edilir.
-- **Min / Max / Karakterler**: Metnin sonuna eklenecek rastgele karakter sayısı ve havuzu. Son kullanılan 5 karakter tekrar seçilmez.
+- **Gönderilecek metin**: Hedef uygulamaya yazılacak metin. En fazla 200 karakter enjekte edilir.
+- **En az / En çok / Karakter havuzu**: Metnin sonuna eklenecek rastgele karakter sayısı ve havuzu. Son kullanılan 5 karakter tekrar seçilmez.
 - **Yazım hızı**: Metin 4 karakterlik parçalar halinde, aralarda 8 ms bekleyerek yazılır. Bu, sistem girdi kuyruğunun taşmasını ve Windows'un varsayılan bip sesini engeller.
 
 ### Gelişmiş Ayarlar
 
-- **MASTER KONTROL**: Tüm makroları anında devre dışı bırakmak için bir global kısayol atayın. Kapatıldığında çalışan metin makrosu iptal edilir ve sıradaki tetiklemeler silinir.
-- **UYGULAMA SEÇ**: Makronun sadece belirli uygulamalarda çalışmasını sağlayın.
+- **MASTER KONTROL**: Tüm makroları anında devre dışı bırakmak için bir global kısayol atayın. Duraklatıldığında başlık çubuğundaki durum rozeti **Duraklatıldı** olur, panel üstünde uyarı şeridi görünür, çalışan metin makrosu iptal edilir ve sıradaki tetiklemeler silinir.
+- **HEDEF UYGULAMA**: Makronun sadece belirli uygulamalarda çalışmasını sağlayın.
 
 ### Kapatma
 
