@@ -50,9 +50,7 @@ public class KeyboardHook : IDisposable
     private bool _disposed;
 
     // Modifier key states
-    private bool _isAltDown;
-    private bool _isShiftDown;
-    private bool _isCtrlDown;
+    private readonly HashSet<int> _pressedModifierKeys = new();
 
     // VK codes for modifiers
     private const int VK_SHIFT = 0x10;
@@ -68,17 +66,17 @@ public class KeyboardHook : IDisposable
     /// <summary>
     /// Current state of Alt modifier
     /// </summary>
-    public bool IsAltDown => _isAltDown;
+    public bool IsAltDown => IsAnyDown(VK_MENU, VK_LMENU, VK_RMENU);
 
     /// <summary>
     /// Current state of Shift modifier
     /// </summary>
-    public bool IsShiftDown => _isShiftDown;
+    public bool IsShiftDown => IsAnyDown(VK_SHIFT, VK_LSHIFT, VK_RSHIFT);
 
     /// <summary>
     /// Current state of Ctrl modifier
     /// </summary>
-    public bool IsCtrlDown => _isCtrlDown;
+    public bool IsCtrlDown => IsAnyDown(VK_CONTROL, VK_LCONTROL, VK_RCONTROL);
 
     /// <summary>
     /// Fired when any key state changes. Parameters: (VK code, isDown)
@@ -196,31 +194,16 @@ public class KeyboardHook : IDisposable
     /// </summary>
     public void ResetModifierState()
     {
-        _isAltDown = false;
-        _isShiftDown = false;
-        _isCtrlDown = false;
+        _pressedModifierKeys.Clear();
     }
+
+    private bool IsAnyDown(params int[] keys) => keys.Any(_pressedModifierKeys.Contains);
 
     private void UpdateModifierState(int vkCode, bool isDown)
     {
-        switch (vkCode)
-        {
-            case VK_MENU:
-            case VK_LMENU:
-            case VK_RMENU:
-                _isAltDown = isDown;
-                break;
-            case VK_SHIFT:
-            case VK_LSHIFT:
-            case VK_RSHIFT:
-                _isShiftDown = isDown;
-                break;
-            case VK_CONTROL:
-            case VK_LCONTROL:
-            case VK_RCONTROL:
-                _isCtrlDown = isDown;
-                break;
-        }
+        if (!IsModifierKey(vkCode)) return;
+        if (isDown) _pressedModifierKeys.Add(vkCode);
+        else _pressedModifierKeys.Remove(vkCode);
     }
 
     /// <summary>

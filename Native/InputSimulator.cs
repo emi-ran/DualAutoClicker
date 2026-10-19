@@ -311,7 +311,7 @@ public static class InputSimulator
             {
                 // Give the target application time to consume the batch. Without this the
                 // input queue can overflow and Windows answers with its default beep.
-                Thread.Sleep(BatchDelayMs);
+                if (cancellationToken.WaitHandle.WaitOne(BatchDelayMs)) return false;
 
                 // Abort if focus moved away while typing
                 if (IsOurAppInForeground() || !IsTargetWindowInForeground())

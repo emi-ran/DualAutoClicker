@@ -107,7 +107,7 @@ Uygulamanın üst kısmında 6 profil bulunur. Her profil kendi ayarlarını sak
 
 ### Gelişmiş Ayarlar
 
-- **MASTER KONTROL**: Tüm makroları anında devre dışı bırakmak için bir global kısayol atayın.
+- **MASTER KONTROL**: Tüm makroları anında devre dışı bırakmak için bir global kısayol atayın. Kapatıldığında çalışan metin makrosu iptal edilir ve sıradaki tetiklemeler silinir.
 - **UYGULAMA SEÇ**: Makronun sadece belirli uygulamalarda çalışmasını sağlayın.
 
 ### Kapatma

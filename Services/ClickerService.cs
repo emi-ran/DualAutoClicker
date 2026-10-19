@@ -103,15 +103,19 @@ public class ClickerService : IDisposable
 
         StopLeftClicking();
         StopRightClicking();
+        _macroService.CancelPending();
         ResetMacroState(resetModifierTracking: true);
     }
 
     /// <summary>
     /// Clears macro debounce/suppression state so no key stays logically held down.
     /// </summary>
-    private void ResetMacroState(bool resetModifierTracking)
+    private void ResetMacroState(bool resetModifierTracking, bool preserveSuppressedKeys = false)
     {
-        _suppressedKeys.Clear();
+        if (!preserveSuppressedKeys)
+        {
+            _suppressedKeys.Clear();
+        }
         _macroKeyDown = false;
         _macroMouseDown = false;
 
@@ -140,6 +144,13 @@ public class ClickerService : IDisposable
         // Check keyboard macro activation (with modifier support for mouse too)
         if (macroSettings.Enabled && macroSettings.KeyType == "mouse" && macroSettings.KeyCode == buttonCode)
         {
+            if (!isDown)
+            {
+                // Always release the debounce state, even if modifiers were released first.
+                _macroMouseDown = false;
+                return;
+            }
+
             // Check if required modifiers are pressed
             bool modifiersMatch = CheckMacroModifiers(macroSettings);
             
@@ -150,10 +161,6 @@ public class ClickerService : IDisposable
                 {
                     _macroMouseDown = true;
                     _macroService.EnqueueMacro(macroSettings);
-                }
-                else if (!isDown)
-                {
-                    _macroMouseDown = false;
                 }
             }
             return;
@@ -220,6 +227,14 @@ public class ClickerService : IDisposable
             return false;
         }
 
+        // A macro key-up belongs to a swallowed key-down even if modifier state or
+        // settings changed while the key was held.
+        if (!isDown && _suppressedKeys.Remove(vkCode))
+        {
+            _macroKeyDown = false;
+            return true;
+        }
+
         // Check keyboard macro activation (with modifier support)
         if (macroSettings.Enabled && macroSettings.KeyType == "keyboard" && macroSettings.KeyCode == vkCode)
         {
@@ -232,6 +247,7 @@ public class ClickerService : IDisposable
                 if (isDown && !_macroKeyDown)
                 {
                     _macroKeyDown = true;
+                    _suppressedKeys.Add(vkCode);
                     // Queue the injection off the hook thread; the callback must return fast.
                     _macroService.EnqueueMacro(macroSettings);
                 }
@@ -288,11 +304,12 @@ public class ClickerService : IDisposable
         // Stop all clicking when master is disabled
         if (!_masterEnabled)
         {
+            _macroService.CancelPending();
             StopLeftClicking();
             StopRightClicking();
             _leftToggleState = false;
             _rightToggleState = false;
-            ResetMacroState(resetModifierTracking: false);
+            ResetMacroState(resetModifierTracking: false, preserveSuppressedKeys: true);
         }
 
         MasterStateChanged?.Invoke(_masterEnabled);
@@ -317,11 +334,12 @@ public class ClickerService : IDisposable
 
         if (!_masterEnabled)
         {
+            _macroService.CancelPending();
             StopLeftClicking();
             StopRightClicking();
             _leftToggleState = false;
             _rightToggleState = false;
-            ResetMacroState(resetModifierTracking: false);
+            ResetMacroState(resetModifierTracking: false, preserveSuppressedKeys: true);
         }
 
         MasterStateChanged?.Invoke(_masterEnabled);

@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Klavye Makrosu
+- Master kontrol kapatıldığında çalışan makro iptal edilir; bekleyen işler de kuyruktan temizlenir. İptal, metin parçaları arasındaki beklemeyi de keser.
+- Mouse makro tuşunun bırakılması artık modifier durumundan bağımsız debounce'u sıfırlar.
+- Klavye modifier'ları sol/sağ tuş bazında izlenir; bir Ctrl/Shift/Alt tuşunu bırakmak diğer taraf hâlâ basılıyken modifier'ı yanlışlıkla bırakmaz.
+- Makro için yutulan aktivasyon tuşunun key-up olayı, modifier'lar değişse veya master kapatılsa bile eşleşmiş şekilde işlenir.
+
 ### Eklenenler
 - GitHub release yayımlandığında Windows x64 uygulamasını ve installer'ı imzalayıp `DualAutoClicker-setup.exe` dosyasını release'e ekleyen CI akışı.
 - PFX Base64 ve parola için GitHub Actions secrets; tag/sürüm, sabit installer GUID'i ve imza/zaman damgası kontrolleri.

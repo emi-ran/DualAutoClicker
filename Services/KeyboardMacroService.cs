@@ -28,13 +28,17 @@ public sealed class KeyboardMacroService : IDisposable
         string BaseText,
         string JunkCharacters,
         int MinRandomChars,
-        int MaxRandomChars);
+        int MaxRandomChars,
+        long Generation);
 
     private readonly Random _random = new();
     private readonly Queue<char> _recentlyUsed = new();
     private readonly BlockingCollection<MacroJob> _queue = new(new ConcurrentQueue<MacroJob>(), QueueCapacity);
     private readonly CancellationTokenSource _cts = new();
     private readonly object _startLock = new();
+    private readonly object _runLock = new();
+    private CancellationTokenSource? _activeRunCts;
+    private long _generation;
     private Thread? _worker;
 
     private bool _disposed;
@@ -76,7 +80,11 @@ public sealed class KeyboardMacroService : IDisposable
         if (_disposed || !settings.Enabled) return;
         if (string.IsNullOrEmpty(settings.BaseText)) return;
 
-        MacroJob job = CreateJob(settings);
+        MacroJob job;
+        lock (_runLock)
+        {
+            job = CreateJob(settings, _generation);
+        }
 
         if (_queue.IsAddingCompleted) return;
 
@@ -92,7 +100,7 @@ public sealed class KeyboardMacroService : IDisposable
     /// <summary>
     /// Clamps user input so a bad configuration can never flood the input queue.
     /// </summary>
-    private static MacroJob CreateJob(KeyboardMacroSettings settings)
+    private static MacroJob CreateJob(KeyboardMacroSettings settings, long generation)
     {
         string baseText = settings.BaseText ?? string.Empty;
         if (baseText.Length > InputSimulator.MaxTextLength)
@@ -109,7 +117,7 @@ public sealed class KeyboardMacroService : IDisposable
             junkCharacters = junkCharacters[..MaxJunkCharacterCount];
         }
 
-        return new MacroJob(baseText, junkCharacters, minRandom, maxRandom);
+        return new MacroJob(baseText, junkCharacters, minRandom, maxRandom, generation);
     }
 
     private void ProcessQueue()
@@ -118,18 +126,26 @@ public sealed class KeyboardMacroService : IDisposable
         {
             foreach (MacroJob job in _queue.GetConsumingEnumerable(_cts.Token))
             {
+                CancellationTokenSource runCts;
+                lock (_runLock)
+                {
+                    if (job.Generation != _generation) continue;
+                    runCts = CancellationTokenSource.CreateLinkedTokenSource(_cts.Token);
+                    _activeRunCts = runCts;
+                }
+
                 try
                 {
                     // Let the physical hotkey and its modifiers be released first.
-                    if (_cts.Token.WaitHandle.WaitOne(TriggerDelayMs))
+                    if (runCts.Token.WaitHandle.WaitOne(TriggerDelayMs))
                     {
-                        return;
+                        continue;
                     }
 
                     string text = GenerateText(job);
                     if (text.Length == 0) continue;
 
-                    if (!InputSimulator.SendText(text, _cts.Token))
+                    if (!InputSimulator.SendText(text, runCts.Token))
                     {
                         Debug.WriteLine("Macro text was not injected (focus changed or SendInput failed).");
                     }
@@ -137,6 +153,14 @@ public sealed class KeyboardMacroService : IDisposable
                 catch (Exception ex)
                 {
                     Debug.WriteLine($"Macro execution failed: {ex}");
+                }
+                finally
+                {
+                    lock (_runLock)
+                    {
+                        if (ReferenceEquals(_activeRunCts, runCts)) _activeRunCts = null;
+                    }
+                    runCts.Dispose();
                 }
             }
         }
@@ -223,6 +247,17 @@ public sealed class KeyboardMacroService : IDisposable
         _recentlyUsed.Clear();
     }
 
+    /// <summary>Immediately cancels the active run and discards queued runs.</summary>
+    public void CancelPending()
+    {
+        lock (_runLock)
+        {
+            _generation++;
+            _activeRunCts?.Cancel();
+            while (_queue.TryTake(out _)) { }
+        }
+    }
+
     public void Dispose()
     {
         if (_disposed) return;
@@ -230,6 +265,7 @@ public sealed class KeyboardMacroService : IDisposable
 
         _queue.CompleteAdding();
         _cts.Cancel();
+        lock (_runLock) _activeRunCts?.Cancel();
 
         Thread? worker = _worker;
         if (worker == null)
