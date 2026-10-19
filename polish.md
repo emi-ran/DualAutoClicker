@@ -6,7 +6,7 @@ Bu dosya, yapılan polish çalışmasının güncel durumunu özetler.
 
 - Arayuz yenilemesi, responsive duzen, kart/anahtar hizalari ve pencere boyutu duzeltmeleri README ve CHANGELOG'da aciklandi.
 - Proje surumu, README rozeti ve release changelog basligi 3.2.5 olarak hizalandi.
-- `dotnet publish DualAutoClicker.csproj -c Release -r win-x64 --self-contained true` basarili. Imzali installer CI, GitHub release yayinlandiktan sonra calisacak; kullanici ortaminda manuel UI smoke testi yapilmadi.
+- `dotnet publish DualAutoClicker.csproj -c Release -r win-x64 --self-contained true` başarılı. GitHub Actions run 39335843302 başarılı tamamlandı; release'e `DualAutoClicker-setup.exe` eklendi (SHA-256: 2b427199eb0874c84c652d3382853ab456bb6c94b9c833fa3bec0e34c09b3e80). Kullanıcı ortamında manuel UI smoke testi yapılmadı.
 
 ## Tamamlananlar
 
