@@ -1,5 +1,15 @@
 # Changelog
 
+## [Unreleased]
+
+### Eklenenler
+- GitHub release yayımlandığında Windows x64 uygulamasını ve installer'ı imzalayıp `DualAutoClicker-setup.exe` dosyasını release'e ekleyen CI akışı.
+- PFX Base64 ve parola için GitHub Actions secrets; tag/sürüm, sabit installer GUID'i ve imza/zaman damgası kontrolleri.
+
+### Düzeltmeler
+- Installer betiği sürümlü Windows SDK klasörlerinde SignTool bulabiliyor ve PFX parolasını `SIGNING_PFX_PASSWORD` ortam değişkeninden okuyabiliyor.
+- `--csproj` ile seçilen proje artık publish komutuna da aktarılıyor.
+
 ## [3.2.3] - 2026-10-19
 
 ### Düzeltmeler

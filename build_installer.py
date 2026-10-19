@@ -1,4 +1,5 @@
 import argparse
+import os
 import shutil
 import subprocess
 import sys
@@ -41,6 +42,21 @@ def resolve_iscc() -> str:
 
 
 def resolve_signtool() -> str:
+    # GitHub-hosted runners install SignTool under a versioned Windows SDK directory.
+    sdk_tools = []
+    for program_files in (os.environ.get("ProgramFiles(x86)"), os.environ.get("ProgramFiles")):
+        if not program_files:
+            continue
+        sdk_bin = Path(program_files) / "Windows Kits" / "10" / "bin"
+        for tool in sdk_bin.glob("*/x64/signtool.exe"):
+            try:
+                version = tuple(int(part) for part in tool.parent.parent.name.split("."))
+            except ValueError:
+                continue
+            sdk_tools.append((version, tool))
+    if sdk_tools:
+        return str(max(sdk_tools, key=lambda item: item[0])[1])
+
     candidates = [
         r"C:\Program Files (x86)\Windows Kits\10\bin\x64\signtool.exe",
         r"C:\Program Files\Windows Kits\10\bin\x64\signtool.exe",
@@ -193,7 +209,8 @@ def main() -> int:
     parser.add_argument("--skip-publish", action="store_true")
     parser.add_argument("--skip-installer", action="store_true")
     parser.add_argument("--cert", default="", help="PFX sertifika yolu")
-    parser.add_argument("--cert-pass", default="", help="PFX sertifika sifresi")
+    parser.add_argument("--cert-pass", default=os.environ.get("SIGNING_PFX_PASSWORD", ""),
+                        help="PFX sifresi (tercihen SIGNING_PFX_PASSWORD ortam degiskeni)")
     args = parser.parse_args()
 
 
@@ -207,7 +224,7 @@ def main() -> int:
     publish_dir = repo_root / "bin" / args.configuration / "net8.0-windows10.0.19041.0" / args.runtime / "publish"
 
     if args.cert and not args.cert_pass:
-        print("Sertifika sifresi (--cert-pass) gerekli.")
+        print("Sertifika sifresi (SIGNING_PFX_PASSWORD veya --cert-pass) gerekli.")
         return 1
 
     try:
@@ -226,6 +243,7 @@ def main() -> int:
         publish_cmd = [
             "dotnet",
             "publish",
+            str(csproj_path),
             "-c",
             args.configuration,
             "-r",

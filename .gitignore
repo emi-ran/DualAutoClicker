@@ -40,4 +40,9 @@ nul
 # Certificates
 *.pfx
 *.cer
+*.p12
+*.pfx.base64
+.env
+.env.*
+__pycache__/
 

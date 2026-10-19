@@ -55,6 +55,32 @@ Bu komut:
 
 Yayın derlemesinde `PublishReadyToRun` açıktır: açılış ~50-60 ms hızlanır, yayın boyutu ~203 MB olur. Boyut öncelikliyse `DualAutoClicker.csproj` içinde bu ayarı kapatın.
 
+### Otomatik imzalı release
+
+`.github/workflows/release.yml`, GitHub'da bir release **yayımlandığında** Windows x64 uygulamasını üretir, uygulama EXE'lerini ve installer'ı SHA-256 + zaman damgası ile imzalar. Sonuç release'e `DualAutoClicker-setup.exe` olarak eklenir. Yalnız tag push etmek veya release taslağı oluşturmak akışı başlatmaz; yayımlamak gerekir. Başarısız akış Actions üzerinden yeniden çalıştırılabilir.
+
+Repo **Settings → Secrets and variables → Actions** altında şu değerler gerekir:
+
+| Tür | Ad | İçerik |
+| --- | --- | --- |
+| Secret | `SIGNING_PFX_BASE64` | Özel anahtarı içeren PFX/P12 dosyasının Base64 kodlanmış içeriği |
+| Secret | `SIGNING_PFX_PASSWORD` | PFX dosyasının parolası |
+| Variable | `INSTALLER_APP_ID` | Tüm CI release'lerinde aynı kalacak, süslü parantezsiz kurulum GUID'i |
+
+PFX'i diskte ek bir Base64 kopyası oluşturmadan GitHub'a eklemek için repo kökünde:
+
+```powershell
+[Convert]::ToBase64String([IO.File]::ReadAllBytes((Resolve-Path '.\Emirhan-Cetinkaya.pfx').Path)) |
+    gh secret set SIGNING_PFX_BASE64 --repo emi-ran/DualAutoClicker
+gh secret set SIGNING_PFX_PASSWORD --repo emi-ran/DualAutoClicker
+```
+
+İkinci komut parolayı gizli olarak sorar. Parolayı komuta, kaynak koduna veya `.env` dosyasına yazmak gerekmez. PFX Base64 değeri GitHub'ın secret başına 48 KB sınırına sığmalıdır. `INSTALLER_APP_ID` bir kez oluşturulur; eski bir installer serisini devam ettiriyorsanız onun `AppId` GUID'ini kullanın. Rastgele GUID'i her release'te değiştirmeyin. CI kurulumu için oluşturulan GUID, eski yerel installer'ların rastgele kimlikleriyle kendiliğinden eşleşmez.
+
+Sürüm çıkarırken `.csproj` içindeki `Version`, README sürümü ve CHANGELOG güncellenmeli; tag örneğin `v3.2.4`, proje sürümü `3.2.4` olmalıdır. Ön sürümler için `v3.2.4-rc.1` ve `3.2.4-rc.1` de desteklenir. Tag ile proje sürümü uyuşmazsa akış durur. Workflow'u içeren commit yeni release tag'inde bulunmalıdır.
+
+CI, sertifikayı runner'ın geçici klasöründe kullanır ve iş bitiminde siler. Eksik secret, imzalama veya imza/zaman damgası kontrolü hatasında installer yüklenmez. Self-signed sertifikalarla `NotTrusted` durumu kabul edilir; bu, Windows/SmartScreen güveni sağlandığı anlamına gelmez. Runner'a güvenilen kök sertifika yüklenmez. Yerel imzalamada da parola `SIGNING_PFX_PASSWORD` ortam değişkeninden okunabilir; mevcut `--cert-pass` seçeneği desteklenmeye devam eder.
+
 ## 🎮 Kullanım
 
 ### Profiller
