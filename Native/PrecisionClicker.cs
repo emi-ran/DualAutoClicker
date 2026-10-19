@@ -20,7 +20,33 @@ public class PrecisionClicker : IDisposable
     /// </summary>
     private sealed class RunToken
     {
+        private readonly object _sync = new();
+        private bool _disposed;
+
         public volatile bool Running = true;
+        public readonly ManualResetEventSlim StopRequested = new(false);
+
+        public void RequestStop()
+        {
+            lock (_sync)
+            {
+                if (_disposed) return;
+
+                Running = false;
+                StopRequested.Set();
+            }
+        }
+
+        public void Dispose()
+        {
+            lock (_sync)
+            {
+                if (_disposed) return;
+
+                _disposed = true;
+                StopRequested.Dispose();
+            }
+        }
     }
 
     private RunToken? _runToken;
@@ -85,7 +111,7 @@ public class PrecisionClicker : IDisposable
         RunToken? token = Interlocked.Exchange(ref _runToken, null);
         if (token == null) return;
 
-        token.Running = false;
+        token.RequestStop();
     }
 
     /// <summary>
@@ -107,51 +133,58 @@ public class PrecisionClicker : IDisposable
 
     private void ClickLoop(RunToken token)
     {
-        var stopwatch = Stopwatch.StartNew();
-        long nextClickTime = 0;
-
-        while (token.Running)
+        try
         {
-            long elapsed = stopwatch.ElapsedTicks;
-            long elapsedMicroseconds = elapsed * 1_000_000 / Stopwatch.Frequency;
+            var stopwatch = Stopwatch.StartNew();
+            long nextClickTime = 0;
 
-            if (elapsedMicroseconds >= nextClickTime)
+            while (token.Running)
             {
-                _clickAction();
+                long elapsed = stopwatch.ElapsedTicks;
+                long elapsedMicroseconds = elapsed * 1_000_000 / Stopwatch.Frequency;
 
-                // Calculate next interval with optional randomization
-                int effectiveCps = _baseCps;
-                if (_randomPercent > 0)
+                if (elapsedMicroseconds >= nextClickTime)
                 {
-                    double variance = _baseCps * _randomPercent / 100.0;
-                    effectiveCps = (int)(_baseCps + (_random.NextDouble() * 2 - 1) * variance);
-                    effectiveCps = Math.Max(1, effectiveCps);
-                }
+                    _clickAction();
 
-                int intervalMicroseconds = (int)(1_000_000.0 / effectiveCps);
-                nextClickTime += intervalMicroseconds;
+                    // Calculate next interval with optional randomization
+                    int effectiveCps = _baseCps;
+                    if (_randomPercent > 0)
+                    {
+                        double variance = _baseCps * _randomPercent / 100.0;
+                        effectiveCps = (int)(_baseCps + (_random.NextDouble() * 2 - 1) * variance);
+                        effectiveCps = Math.Max(1, effectiveCps);
+                    }
 
-                // Prevent drift accumulation
-                if (nextClickTime < elapsedMicroseconds)
-                {
-                    nextClickTime = elapsedMicroseconds + intervalMicroseconds;
-                }
-            }
-            else
-            {
-                // Sleep for most of the remaining interval, then spin only for the
-                // last couple of milliseconds. Sleeping 1 ms at a time woke the CPU
-                // hundreds of times per second for no timing benefit.
-                long remainingMs = (nextClickTime - elapsedMicroseconds) / 1000;
-                if (remainingMs > 2)
-                {
-                    Thread.Sleep((int)(remainingMs - 2));
+                    int intervalMicroseconds = (int)(1_000_000.0 / effectiveCps);
+                    nextClickTime += intervalMicroseconds;
+
+                    // Prevent drift accumulation
+                    if (nextClickTime < elapsedMicroseconds)
+                    {
+                        nextClickTime = elapsedMicroseconds + intervalMicroseconds;
+                    }
                 }
                 else
                 {
-                    Thread.SpinWait(10);
+                    // Wait interruptibly for the next millisecond boundary. Only
+                    // spin for the remaining sub-millisecond fraction to preserve CPS
+                    // accuracy without busy-waiting for the full final 2 ms.
+                    long remainingMs = (nextClickTime - elapsedMicroseconds) / 1000;
+                    if (remainingMs > 0)
+                    {
+                        token.StopRequested.Wait((int)remainingMs);
+                    }
+                    else
+                    {
+                        Thread.SpinWait(10);
+                    }
                 }
             }
+        }
+        finally
+        {
+            token.Dispose();
         }
     }
 

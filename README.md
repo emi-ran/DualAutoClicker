@@ -115,6 +115,10 @@ Uygulamanın üst kısmında 6 profil bulunur. Her profil kendi ayarlarını sak
 - Sağ üstteki kapat düğmesi uygulamayı tamamen kapatır ve global klavye/fare hook'larını serbest bırakır.
 - Arka planda çalıştırmaya devam etmek için pencereyi **küçültün**; kapatmak kısayolları da devre dışı bırakır.
 
+Tıklama zamanlayıcısı CPS hassasiyetini korumak için en fazla 1 ms spin-wait yapar. Kapanırken bekleme sinyalle anında kesilir; mevcut tıklama aralığının bitmesi beklenmez.
+
+Mouse hook'u yalnızca orta ve ek fare tuşlarını işler; fare hareketleri, tekerlek ve sol/sağ tıklama olayları ayrıştırılmadan geçirilir.
+
 ## 📄 Lisans
 
 Bu proje [MIT Lisansı](LICENSE) altında lisanslanmıştır.

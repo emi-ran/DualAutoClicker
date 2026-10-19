@@ -98,6 +98,14 @@ public class MouseHook : IDisposable
 
         try
         {
+            // This hook only handles the middle and extra mouse buttons. Mouse move,
+            // wheel, left/right click, and other events need no marshaling or dispatch.
+            if (wParam != WM_XBUTTONDOWN && wParam != WM_XBUTTONUP &&
+                wParam != WM_MBUTTONDOWN && wParam != WM_MBUTTONUP)
+            {
+                return CallNextHookEx(_hookId, nCode, wParam, lParam);
+            }
+
             var hookStruct = Marshal.PtrToStructure<MSLLHOOKSTRUCT>(lParam);
 
             // Ignore injected events (our own clicks, other tools) so they never

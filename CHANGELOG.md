@@ -8,6 +8,11 @@
 - Klavye modifier'ları sol/sağ tuş bazında izlenir; bir Ctrl/Shift/Alt tuşunu bırakmak diğer taraf hâlâ basılıyken modifier'ı yanlışlıkla bırakmaz.
 - Makro için yutulan aktivasyon tuşunun key-up olayı, modifier'lar değişse veya master kapatılsa bile eşleşmiş şekilde işlenir.
 
+### Performans
+- Tıklama iş parçacığının beklemesi durdurma sinyaliyle kesilebilir hale geldi; kapatırken düşük CPS aralıklarının bitmesi beklenmiyor.
+- Hassas zamanlamadaki son aktif bekleme aralığı 2 ms'den 1 ms'nin altına düşürüldü; tıklama sırasındaki gereksiz CPU yükü azaltıldı.
+- Mouse hook'u artık kullanmadığı hareket, tekerlek ve ana buton olaylarını ayrıştırmadan doğrudan geçiriyor.
+
 ### Eklenenler
 - GitHub release yayımlandığında Windows x64 uygulamasını ve installer'ı imzalayıp `DualAutoClicker-setup.exe` dosyasını release'e ekleyen CI akışı.
 - PFX Base64 ve parola için GitHub Actions secrets; tag/sürüm, sabit installer GUID'i ve imza/zaman damgası kontrolleri.
