@@ -113,13 +113,15 @@ jobs:
               $signerThumbprint = $signature.SignerCertificate.Thumbprint
               $timestampThumbprint = $signature.TimeStamperCertificate.Thumbprint
               Write-Host "Authenticode status for ${artifact}: $($signature.Status)"
+              Write-Host "Authenticode status message: $($signature.StatusMessage)"
               Write-Host "Signer thumbprint: $signerThumbprint"
-              Write-Host "Timestamp certificate exposed by PowerShell: $([bool]$timestampThumbprint)"
+              Write-Host "Timestamp certificate thumbprint: $timestampThumbprint"
               if ($signerThumbprint -ne $expectedThumbprint -or
-                  $signature.Status -notin @('Valid', 'NotTrusted')) {
-                throw "Signature verification failed for ${artifact}: $($signature.Status)"
+                  !$timestampThumbprint -or
+                  $signature.Status -notin @('Valid', 'NotTrusted', 'UnknownError')) {
+                throw "Signature verification failed for ${artifact}: $($signature.Status) — $($signature.StatusMessage)"
               }
-              # Self-signed certificates may be NotTrusted; do not install them as trusted roots.
+              # The certificate may be untrusted on the ephemeral runner; identity and timestamp are still checked.
             }
             Move-Item -LiteralPath 'Output/DualAutoClicker-Setup.exe' -Destination 'Output/DualAutoClicker-setup.exe.tmp'
             Move-Item -LiteralPath 'Output/DualAutoClicker-setup.exe.tmp' -Destination 'Output/DualAutoClicker-setup.exe'

@@ -79,7 +79,7 @@ gh secret set SIGNING_PFX_PASSWORD --repo emi-ran/DualAutoClicker
 
 Sürüm çıkarırken `.csproj` içindeki `Version`, README sürümü ve CHANGELOG güncellenmeli; tag örneğin `v3.2.5`, proje sürümü `3.2.5` olmalıdır. Ön sürümler için `v3.2.5-rc.1` ve `3.2.5-rc.1` de desteklenir. Tag ile proje sürümü uyuşmazsa akış durur. Workflow'u içeren commit yeni release tag'inde bulunmalıdır.
 
-CI, sertifikayı runner'ın geçici klasöründe kullanır ve iş bitiminde siler. Eksik secret, imzalama veya imza kontrolü hatasında installer yüklenmez. Self-signed sertifikalarla `NotTrusted` durumu kabul edilir; bu, Windows/SmartScreen güveni sağlandığı anlamına gelmez. Runner'a güvenilen kök sertifika yüklenmez. Yerel imzalamada da parola `SIGNING_PFX_PASSWORD` ortam değişkeninden okunabilir; mevcut `--cert-pass` seçeneği desteklenmeye devam eder.
+CI, sertifikayı runner'ın geçici klasöründe kullanır ve iş bitiminde siler. Eksik secret, imzalama veya imza kontrolü hatasında installer yüklenmez. Runner sertifika zincirine güvenmiyorsa `NotTrusted`/`UnknownError` durumu ancak beklenen imzalayan sertifika ve zaman damgası eşleştiğinde kabul edilir; bu, Windows/SmartScreen güveni sağlandığı anlamına gelmez. Runner'a güvenilen kök sertifika yüklenmez. Yerel imzalamada da parola `SIGNING_PFX_PASSWORD` ortam değişkeninden okunabilir; mevcut `--cert-pass` seçeneği desteklenmeye devam eder.
 
 ## 🎮 Kullanım
 
