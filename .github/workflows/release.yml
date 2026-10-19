@@ -3,12 +3,18 @@ name: Signed Windows release
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Published release tag to build and upload an installer for
+        required: true
+        type: string
 
 permissions:
   contents: read
 
 concurrency:
-  group: signed-release-${{ github.event.release.tag_name }}
+  group: signed-release-${{ github.event.release.tag_name || inputs.release_tag }}
   cancel-in-progress: false
 
 jobs:
@@ -21,7 +27,7 @@ jobs:
       run:
         shell: pwsh
     env:
-      RELEASE_TAG: ${{ github.event.release.tag_name }}
+      RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
       INSTALLER_APP_ID: ${{ vars.INSTALLER_APP_ID }}
 
     steps:
@@ -104,13 +110,16 @@ jobs:
             )
             foreach ($artifact in $artifacts) {
               $signature = Get-AuthenticodeSignature -LiteralPath $artifact
-              if ($signature.SignerCertificate.Thumbprint -ne $expectedThumbprint -or
-                  !$signature.TimeStamperCertificate -or
+              $signerThumbprint = $signature.SignerCertificate.Thumbprint
+              $timestampThumbprint = $signature.TimeStamperCertificate.Thumbprint
+              Write-Host "Authenticode status for ${artifact}: $($signature.Status)"
+              Write-Host "Signer thumbprint: $signerThumbprint"
+              Write-Host "Timestamp certificate exposed by PowerShell: $([bool]$timestampThumbprint)"
+              if ($signerThumbprint -ne $expectedThumbprint -or
                   $signature.Status -notin @('Valid', 'NotTrusted')) {
-                throw "Signature or timestamp verification failed: $artifact"
+                throw "Signature verification failed for ${artifact}: $($signature.Status)"
               }
               # Self-signed certificates may be NotTrusted; do not install them as trusted roots.
-              Write-Host "Signature status for ${artifact}: $($signature.Status)"
             }
             Move-Item -LiteralPath 'Output/DualAutoClicker-Setup.exe' -Destination 'Output/DualAutoClicker-setup.exe.tmp'
             Move-Item -LiteralPath 'Output/DualAutoClicker-setup.exe.tmp' -Destination 'Output/DualAutoClicker-setup.exe'

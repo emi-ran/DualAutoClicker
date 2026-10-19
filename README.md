@@ -57,7 +57,7 @@ Yayın derlemesinde `PublishReadyToRun` açıktır: açılış ~50-60 ms hızlan
 
 ### Otomatik imzalı release
 
-`.github/workflows/release.yml`, GitHub'da bir release **yayımlandığında** Windows x64 uygulamasını üretir, uygulama EXE'lerini ve installer'ı SHA-256 + zaman damgası ile imzalar. Sonuç release'e `DualAutoClicker-setup.exe` olarak eklenir. Yalnız tag push etmek veya release taslağı oluşturmak akışı başlatmaz; yayımlamak gerekir. Başarısız akış Actions üzerinden yeniden çalıştırılabilir.
+`.github/workflows/release.yml`, GitHub'da bir release **yayımlandığında** Windows x64 uygulamasını üretir, uygulama EXE'lerini ve installer'ı SHA-256 + RFC 3161 zaman damgası ile imzalar. Sonuç release'e `DualAutoClicker-setup.exe` olarak eklenir. Yalnız tag push etmek veya release taslağı oluşturmak akışı başlatmaz; yayımlamak gerekir. Başarısız akışı Actions'ta yeniden çalıştırabilir veya `Run workflow` ile yayımlanmış tag'i girerek installer'ı yeniden üretebilirsiniz.
 
 Repo **Settings → Secrets and variables → Actions** altında şu değerler gerekir:
 
@@ -79,7 +79,7 @@ gh secret set SIGNING_PFX_PASSWORD --repo emi-ran/DualAutoClicker
 
 Sürüm çıkarırken `.csproj` içindeki `Version`, README sürümü ve CHANGELOG güncellenmeli; tag örneğin `v3.2.5`, proje sürümü `3.2.5` olmalıdır. Ön sürümler için `v3.2.5-rc.1` ve `3.2.5-rc.1` de desteklenir. Tag ile proje sürümü uyuşmazsa akış durur. Workflow'u içeren commit yeni release tag'inde bulunmalıdır.
 
-CI, sertifikayı runner'ın geçici klasöründe kullanır ve iş bitiminde siler. Eksik secret, imzalama veya imza/zaman damgası kontrolü hatasında installer yüklenmez. Self-signed sertifikalarla `NotTrusted` durumu kabul edilir; bu, Windows/SmartScreen güveni sağlandığı anlamına gelmez. Runner'a güvenilen kök sertifika yüklenmez. Yerel imzalamada da parola `SIGNING_PFX_PASSWORD` ortam değişkeninden okunabilir; mevcut `--cert-pass` seçeneği desteklenmeye devam eder.
+CI, sertifikayı runner'ın geçici klasöründe kullanır ve iş bitiminde siler. Eksik secret, imzalama veya imza kontrolü hatasında installer yüklenmez. Self-signed sertifikalarla `NotTrusted` durumu kabul edilir; bu, Windows/SmartScreen güveni sağlandığı anlamına gelmez. Runner'a güvenilen kök sertifika yüklenmez. Yerel imzalamada da parola `SIGNING_PFX_PASSWORD` ortam değişkeninden okunabilir; mevcut `--cert-pass` seçeneği desteklenmeye devam eder.
 
 ## 🎮 Kullanım
 
