@@ -5,7 +5,7 @@ Bağımsız sol ve sağ tık ayarlarına sahip, 6 profil destekli, yüksek perfo
 ![Platform](https://img.shields.io/badge/Platform-Windows-blue)
 ![.NET](https://img.shields.io/badge/.NET-8.0-purple)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Version](https://img.shields.io/badge/Version-3.2.2-orange)
+![Version](https://img.shields.io/badge/Version-3.2.3-orange)
 
 ## ✨ Özellikler
 
@@ -53,6 +53,8 @@ Bu komut:
 - Inno Setup ile `DualAutoClicker-Setup.exe` kurulum dosyasını üretir.
 - Sertifika verildiyse yayınlanan exe ve kurulum dosyasını imzalar.
 
+Yayın derlemesinde `PublishReadyToRun` açıktır: açılış ~50-60 ms hızlanır, yayın boyutu ~203 MB olur. Boyut öncelikliyse `DualAutoClicker.csproj` içinde bu ayarı kapatın.
+
 ## 🎮 Kullanım
 
 ### Profiller
@@ -62,17 +64,30 @@ Uygulamanın üst kısmında 6 profil bulunur. Her profil kendi ayarlarını sak
 - Profil seçmek için ilgili profile **sol tıklayın**
 - Profil adını değiştirmek için **sağ tıklayın**
 
-### Makro Ayarları
+### Tıklama Ayarları
 
 - **SOL/SAĞ TIK**: İstediğiniz tarafı etkinleştirin.
 - **DEĞİŞTİR**: Aktivasyon tuşunu belirleyin (Klavye veya Mouse).
 - **MOD**: Makronun basılı tutunca mı yoksa Aç/Kapat (tıkla-başlat/tıkla-durdur) şeklinde mi çalışacağını seçin.
 - **CPS & RND**: Tıklama hızını ve rastgelelik oranını belirleyin.
 
+### Metin Makrosu
+
+- **Aktivasyon Tuşu**: Klavye veya mouse ile atanır. Tuşu atarken Alt/Ctrl/Shift basılıysa kombinasyon olarak kaydedilir (`Alt+3` gibi).
+- **Tam eşleşme**: Makro yalnızca kaydedilen modifier'ların tamamı basılıyken çalışır. `Alt+3` makrosu Ctrl de basılıyken tetiklenmez; böylece fazladan modifier hedef uygulamaya sızmaz.
+- **Metin**: Gönderilecek metin. En fazla 200 karakter enjekte edilir.
+- **Min / Max / Karakterler**: Metnin sonuna eklenecek rastgele karakter sayısı ve havuzu. Son kullanılan 5 karakter tekrar seçilmez.
+- **Yazım hızı**: Metin 4 karakterlik parçalar halinde, aralarda 8 ms bekleyerek yazılır. Bu, sistem girdi kuyruğunun taşmasını ve Windows'un varsayılan bip sesini engeller.
+
 ### Gelişmiş Ayarlar
 
 - **MASTER KONTROL**: Tüm makroları anında devre dışı bırakmak için bir global kısayol atayın.
 - **UYGULAMA SEÇ**: Makronun sadece belirli uygulamalarda çalışmasını sağlayın.
+
+### Kapatma
+
+- Sağ üstteki kapat düğmesi uygulamayı tamamen kapatır ve global klavye/fare hook'larını serbest bırakır.
+- Arka planda çalıştırmaya devam etmek için pencereyi **küçültün**; kapatmak kısayolları da devre dışı bırakır.
 
 ## 📄 Lisans
 

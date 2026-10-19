@@ -10,6 +10,8 @@
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <UseWinUI>true</UseWinUI>
     <EnableMsixTooling>true</EnableMsixTooling>
+    <!-- SDK 8.0.401 ships an older Windows SDK projection than WindowsAppSDK 1.6 requires. -->
+    <WindowsSdkPackageVersion>10.0.19041.38</WindowsSdkPackageVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -17,7 +19,7 @@
     <!-- Application info -->
     <ApplicationIcon>Assets\icon.ico</ApplicationIcon>
     <AssemblyName>DualAutoClicker</AssemblyName>
-    <Version>3.2.2</Version>
+    <Version>3.2.3</Version>
     <Company>DualAutoClicker</Company>
     <Product>Dual AutoClicker</Product>
     <Description>High-performance dual autoclicker with independent left/right click settings - WinUI 3</Description>
@@ -25,6 +27,7 @@
     <!-- Publish settings -->
     <DebugType>none</DebugType>
     <PublishTrimmed>false</PublishTrimmed>
+    <PublishReadyToRun>true</PublishReadyToRun>
 
     <!-- Windows App SDK -->
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>

@@ -27,11 +27,10 @@ public class ClickerService : IDisposable
     // Macro state tracking (prevents repeated execution on key hold)
     private bool _macroKeyDown;
     private bool _macroMouseDown;
-    
-    // Modifier suppression tracking (for active macro activation)
-    private bool _suppressAlt;
-    private bool _suppressShift;
-    private bool _suppressCtrl;
+
+    // Keys whose key down we swallowed for the active macro combo; their key up must be
+    // swallowed as well, otherwise applications are left with a stuck modifier.
+    private readonly HashSet<int> _suppressedKeys = new();
 
     private bool _disposed;
 
@@ -86,7 +85,7 @@ public class ClickerService : IDisposable
     /// </summary>
     public void Start()
     {
-        PrecisionClicker.SetHighResolution();
+        ResetMacroState(resetModifierTracking: true);
         _mouseHook.Install();
         _keyboardHook.Install();
     }
@@ -96,10 +95,30 @@ public class ClickerService : IDisposable
     /// </summary>
     public void Stop()
     {
-        StopLeftClicking();
-        StopRightClicking();
+        // Unhook first: while a low-level hook is installed, every system input event
+        // is routed through this thread. Leaving it installed during shutdown makes
+        // the mouse/keyboard feel frozen until the process is gone.
         _mouseHook.Uninstall();
         _keyboardHook.Uninstall();
+
+        StopLeftClicking();
+        StopRightClicking();
+        ResetMacroState(resetModifierTracking: true);
+    }
+
+    /// <summary>
+    /// Clears macro debounce/suppression state so no key stays logically held down.
+    /// </summary>
+    private void ResetMacroState(bool resetModifierTracking)
+    {
+        _suppressedKeys.Clear();
+        _macroKeyDown = false;
+        _macroMouseDown = false;
+
+        if (resetModifierTracking)
+        {
+            _keyboardHook.ResetModifierState();
+        }
     }
 
     private void OnMouseButtonStateChanged(int buttonCode, bool isDown)
@@ -130,7 +149,7 @@ public class ClickerService : IDisposable
                 if (isDown && !_macroMouseDown)
                 {
                     _macroMouseDown = true;
-                    _macroService.ExecuteMacro(macroSettings);
+                    _macroService.EnqueueMacro(macroSettings);
                 }
                 else if (!isDown)
                 {
@@ -169,51 +188,36 @@ public class ClickerService : IDisposable
             return false; // Don't suppress master toggle key
         }
 
-        if (!_masterEnabled) return false;
+        if (!_masterEnabled)
+        {
+            // Deliver the key up of anything we swallowed earlier
+            if (!isDown && _suppressedKeys.Remove(vkCode)) return true;
+            return false;
+        }
 
         var leftSettings = _settingsService.Settings.LeftClick;
         var rightSettings = _settingsService.Settings.RightClick;
         var macroSettings = _settingsService.Settings.KeyboardMacro;
+        bool macroActive = macroSettings.Enabled && macroSettings.KeyCode != 0;
 
         // Check if this is a modifier key that should be suppressed (part of active macro)
         if (KeyboardHook.IsModifierKey(vkCode))
         {
-            // Suppress modifier keys while macro activation is active
-            if (macroSettings.Enabled && macroSettings.KeyCode != 0)
+            if (!isDown)
             {
-                bool isAlt = vkCode == 0x12 || vkCode == 0xA4 || vkCode == 0xA5;
-                bool isShift = vkCode == 0x10 || vkCode == 0xA0 || vkCode == 0xA1;
-                bool isCtrl = vkCode == 0x11 || vkCode == 0xA2 || vkCode == 0xA3;
-
-                // Track modifier state for suppression
-                if (isDown)
-                {
-                    if (isAlt && macroSettings.RequireAlt) _suppressAlt = true;
-                    if (isShift && macroSettings.RequireShift) _suppressShift = true;
-                    if (isCtrl && macroSettings.RequireCtrl) _suppressCtrl = true;
-                }
-                else
-                {
-                    // On key up, check if we should suppress and reset
-                    bool shouldSuppress = false;
-                    if (isAlt && _suppressAlt) { _suppressAlt = false; shouldSuppress = true; }
-                    if (isShift && _suppressShift) { _suppressShift = false; shouldSuppress = true; }
-                    if (isCtrl && _suppressCtrl) { _suppressCtrl = false; shouldSuppress = true; }
-                    
-                    if (shouldSuppress) return true;
-                }
-
-                // Suppress modifier keydown if it's required for macro
-                if (isDown)
-                {
-                    if ((isAlt && macroSettings.RequireAlt) ||
-                        (isShift && macroSettings.RequireShift) ||
-                        (isCtrl && macroSettings.RequireCtrl))
-                    {
-                        return true;
-                    }
-                }
+                // Always swallow the key up for a key whose key down we swallowed,
+                // even if the macro settings changed in the meantime.
+                return _suppressedKeys.Remove(vkCode);
             }
+
+            // Suppress the modifier key down only when the macro actually requires it.
+            if (macroActive && IsRequiredMacroModifier(vkCode, macroSettings))
+            {
+                _suppressedKeys.Add(vkCode);
+                return true;
+            }
+
+            return false;
         }
 
         // Check keyboard macro activation (with modifier support)
@@ -228,7 +232,8 @@ public class ClickerService : IDisposable
                 if (isDown && !_macroKeyDown)
                 {
                     _macroKeyDown = true;
-                    _macroService.ExecuteMacro(macroSettings);
+                    // Queue the injection off the hook thread; the callback must return fast.
+                    _macroService.EnqueueMacro(macroSettings);
                 }
                 else if (!isDown)
                 {
@@ -262,6 +267,20 @@ public class ClickerService : IDisposable
         return false; // Don't suppress other keys
     }
 
+    /// <summary>
+    /// Returns true when the given modifier key is required by the macro combo
+    /// </summary>
+    private static bool IsRequiredMacroModifier(int vkCode, KeyboardMacroSettings settings)
+    {
+        return vkCode switch
+        {
+            0x12 or 0xA4 or 0xA5 => settings.RequireAlt,   // Alt
+            0x10 or 0xA0 or 0xA1 => settings.RequireShift, // Shift
+            0x11 or 0xA2 or 0xA3 => settings.RequireCtrl,  // Ctrl
+            _ => false
+        };
+    }
+
     private void ToggleMaster()
     {
         _masterEnabled = !_masterEnabled;
@@ -273,36 +292,22 @@ public class ClickerService : IDisposable
             StopRightClicking();
             _leftToggleState = false;
             _rightToggleState = false;
+            ResetMacroState(resetModifierTracking: false);
         }
 
         MasterStateChanged?.Invoke(_masterEnabled);
     }
 
     /// <summary>
-    /// Checks if required modifier keys for macro are currently pressed
+    /// Checks whether the currently held modifiers match the macro combo exactly.
+    /// Extra modifiers must not trigger the macro, otherwise Ctrl/Alt combinations
+    /// leak into the target application and can produce spurious shortcut/beep behavior.
     /// </summary>
     private bool CheckMacroModifiers(KeyboardMacroSettings macroSettings)
     {
-        // If Alt is required, check if Alt is down
-        if (macroSettings.RequireAlt && !_keyboardHook.IsAltDown)
-            return false;
-
-        // If Shift is required, check if Shift is down
-        if (macroSettings.RequireShift && !_keyboardHook.IsShiftDown)
-            return false;
-
-        // If Ctrl is required, check if Ctrl is down
-        if (macroSettings.RequireCtrl && !_keyboardHook.IsCtrlDown)
-            return false;
-
-        // If no modifiers required, make sure none are pressed (exact match)
-        if (!macroSettings.RequireAlt && !macroSettings.RequireShift && !macroSettings.RequireCtrl)
-        {
-            // Allow activation without any modifiers
-            return true;
-        }
-
-        return true;
+        return _keyboardHook.IsAltDown == macroSettings.RequireAlt
+            && _keyboardHook.IsShiftDown == macroSettings.RequireShift
+            && _keyboardHook.IsCtrlDown == macroSettings.RequireCtrl;
     }
 
     public void SetMasterEnabled(bool enabled)
@@ -316,6 +321,7 @@ public class ClickerService : IDisposable
             StopRightClicking();
             _leftToggleState = false;
             _rightToggleState = false;
+            ResetMacroState(resetModifierTracking: false);
         }
 
         MasterStateChanged?.Invoke(_masterEnabled);
@@ -344,6 +350,10 @@ public class ClickerService : IDisposable
     {
         if (_leftClickActive) return;
         _leftClickActive = true;
+
+        // The 1 ms system timer is only needed while clicks are injected. Keeping it
+        // active for the whole session raises timer/interrupt load for no benefit.
+        PrecisionClicker.SetHighResolution();
         _leftClicker.Start(cps, randomPercent);
         ClickingStateChanged?.Invoke(IsClicking);
     }
@@ -353,6 +363,10 @@ public class ClickerService : IDisposable
         if (!_leftClickActive) return;
         _leftClickActive = false;
         _leftClicker.Stop();
+        if (!IsClicking)
+        {
+            PrecisionClicker.ResetResolution();
+        }
         ClickingStateChanged?.Invoke(IsClicking);
     }
 
@@ -360,6 +374,7 @@ public class ClickerService : IDisposable
     {
         if (_rightClickActive) return;
         _rightClickActive = true;
+        PrecisionClicker.SetHighResolution();
         _rightClicker.Start(cps, randomPercent);
         ClickingStateChanged?.Invoke(IsClicking);
     }
@@ -369,6 +384,10 @@ public class ClickerService : IDisposable
         if (!_rightClickActive) return;
         _rightClickActive = false;
         _rightClicker.Stop();
+        if (!IsClicking)
+        {
+            PrecisionClicker.ResetResolution();
+        }
         ClickingStateChanged?.Invoke(IsClicking);
     }
 
@@ -377,10 +396,10 @@ public class ClickerService : IDisposable
         if (_disposed) return;
 
         Stop();
-        PrecisionClicker.ResetResolution();
-
         _leftClicker.Dispose();
         _rightClicker.Dispose();
+        _macroService.Dispose();
+        PrecisionClicker.ResetResolution();
         _mouseHook.Dispose();
         _keyboardHook.Dispose();
 

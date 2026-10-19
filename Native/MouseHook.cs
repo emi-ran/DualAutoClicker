@@ -16,6 +16,10 @@ public class MouseHook : IDisposable
     private const int XBUTTON1 = 0x0001; // MB4
     private const int XBUTTON2 = 0x0002; // MB5
 
+    // MSLLHOOKSTRUCT.flags
+    private const int LLMHF_INJECTED = 0x01;
+    private const int LLMHF_LOWER_IL_INJECTED = 0x02;
+
     private delegate IntPtr LowLevelMouseProc(int nCode, IntPtr wParam, IntPtr lParam);
 
     [DllImport("user32.dll", SetLastError = true)]
@@ -67,22 +71,42 @@ public class MouseHook : IDisposable
         using var curProcess = Process.GetCurrentProcess();
         using var curModule = curProcess.MainModule!;
         _hookId = SetWindowsHookEx(WH_MOUSE_LL, _proc, GetModuleHandle(curModule.ModuleName), 0);
+        if (_hookId == IntPtr.Zero)
+        {
+            Debug.WriteLine($"Mouse hook install failed: {Marshal.GetLastWin32Error()}");
+        }
     }
 
     public void Uninstall()
     {
-        if (_hookId != IntPtr.Zero)
+        if (_hookId == IntPtr.Zero) return;
+
+        if (!UnhookWindowsHookEx(_hookId))
         {
-            UnhookWindowsHookEx(_hookId);
-            _hookId = IntPtr.Zero;
+            Debug.WriteLine($"Mouse hook uninstall failed: {Marshal.GetLastWin32Error()}");
         }
+
+        _hookId = IntPtr.Zero;
     }
 
     private IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
     {
-        if (nCode >= 0)
+        if (nCode < 0)
+        {
+            return CallNextHookEx(_hookId, nCode, wParam, lParam);
+        }
+
+        try
         {
             var hookStruct = Marshal.PtrToStructure<MSLLHOOKSTRUCT>(lParam);
+
+            // Ignore injected events (our own clicks, other tools) so they never
+            // re-enter this callback and cause recursion or queue flooding.
+            if ((hookStruct.Flags & (LLMHF_INJECTED | LLMHF_LOWER_IL_INJECTED)) != 0)
+            {
+                return CallNextHookEx(_hookId, nCode, wParam, lParam);
+            }
+
             int xButton = (hookStruct.MouseData >> 16) & 0xFFFF;
 
             if (wParam == WM_XBUTTONDOWN)
@@ -112,6 +136,11 @@ public class MouseHook : IDisposable
             {
                 MiddleButtonStateChanged?.Invoke(false);
             }
+        }
+        catch (Exception ex)
+        {
+            // Never let an exception escape a low-level hook; it would crash the process.
+            Debug.WriteLine($"Mouse hook callback failed: {ex}");
         }
 
         return CallNextHookEx(_hookId, nCode, wParam, lParam);

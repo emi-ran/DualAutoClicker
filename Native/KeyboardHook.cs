@@ -14,6 +14,13 @@ public class KeyboardHook : IDisposable
     private const int WM_SYSKEYDOWN = 0x0104;
     private const int WM_SYSKEYUP = 0x0105;
 
+    // KBDLLHOOKSTRUCT.flags
+    private const int LLKHF_INJECTED = 0x10;
+    private const int LLKHF_LOWER_IL_INJECTED = 0x02;
+
+    // A low-level hook must return quickly; Windows drops the hook when it is slow.
+    private static readonly long SlowCallbackThreshold = Stopwatch.Frequency / 200; // 5 ms
+
     private delegate IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, IntPtr lParam);
 
     [DllImport("user32.dll", SetLastError = true)]
@@ -101,22 +108,43 @@ public class KeyboardHook : IDisposable
         using var curProcess = Process.GetCurrentProcess();
         using var curModule = curProcess.MainModule!;
         _hookId = SetWindowsHookEx(WH_KEYBOARD_LL, _proc, GetModuleHandle(curModule.ModuleName), 0);
+        if (_hookId == IntPtr.Zero)
+        {
+            Debug.WriteLine($"Keyboard hook install failed: {Marshal.GetLastWin32Error()}");
+        }
     }
 
     public void Uninstall()
     {
-        if (_hookId != IntPtr.Zero)
+        if (_hookId == IntPtr.Zero) return;
+
+        if (!UnhookWindowsHookEx(_hookId))
         {
-            UnhookWindowsHookEx(_hookId);
-            _hookId = IntPtr.Zero;
+            Debug.WriteLine($"Keyboard hook uninstall failed: {Marshal.GetLastWin32Error()}");
         }
+
+        _hookId = IntPtr.Zero;
     }
 
     private IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
     {
-        if (nCode >= 0)
+        if (nCode < 0)
         {
+            return CallNextHookEx(_hookId, nCode, wParam, lParam);
+        }
+
+        try
+        {
+            long startTimestamp = Stopwatch.GetTimestamp();
             var hookStruct = Marshal.PtrToStructure<KBDLLHOOKSTRUCT>(lParam);
+
+            // Injected events (our own macro output or another tool's) must never be
+            // processed here: they would re-enter this callback and flood the queue.
+            if ((hookStruct.Flags & (LLKHF_INJECTED | LLKHF_LOWER_IL_INJECTED)) != 0)
+            {
+                return CallNextHookEx(_hookId, nCode, wParam, lParam);
+            }
+
             int vkCode = hookStruct.VkCode;
 
             bool isDown = wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN;
@@ -137,7 +165,7 @@ public class KeyboardHook : IDisposable
             {
                 // Check if any subscriber wants to suppress this key
                 bool shouldSuppress = KeyStateChangedWithSuppress?.Invoke(vkCode, isDown) ?? false;
-                
+
                 if (shouldSuppress)
                 {
                     // Return non-zero to block the key from reaching other applications
@@ -146,9 +174,31 @@ public class KeyboardHook : IDisposable
 
                 KeyStateChanged?.Invoke(vkCode, isDown);
             }
+
+            long elapsedTicks = Stopwatch.GetTimestamp() - startTimestamp;
+            if (elapsedTicks > SlowCallbackThreshold)
+            {
+                double elapsedMs = elapsedTicks * 1000.0 / Stopwatch.Frequency;
+                Debug.WriteLine($"Keyboard hook callback took {elapsedMs:0.0} ms");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Never let an exception escape a low-level hook; it would crash the process.
+            Debug.WriteLine($"Keyboard hook callback failed: {ex}");
         }
 
         return CallNextHookEx(_hookId, nCode, wParam, lParam);
+    }
+
+    /// <summary>
+    /// Clears tracked modifier state (used when hooks are stopped or macro state is reset)
+    /// </summary>
+    public void ResetModifierState()
+    {
+        _isAltDown = false;
+        _isShiftDown = false;
+        _isCtrlDown = false;
     }
 
     private void UpdateModifierState(int vkCode, bool isDown)

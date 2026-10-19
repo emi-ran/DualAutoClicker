@@ -1,10 +1,12 @@
 using Microsoft.UI;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Input;
 using DualAutoClicker.Services;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
 using WinRT.Interop;
 using Windows.Graphics;
 using Windows.UI;
@@ -44,6 +46,7 @@ public sealed partial class MainWindow : Window
         // Window events for drag rects
         this.Activated += MainWindow_Activated;
         this.SizeChanged += MainWindow_SizeChanged;
+        this.Closed += (_, _) => App.Shutdown();
         AppTitleBar.SizeChanged += AppTitleBar_SizeChanged;
 
         // Load settings to UI
@@ -121,7 +124,7 @@ public sealed partial class MainWindow : Window
         int windowWidth = 920;
         int windowHeight = 650;
         _appWindow.Resize(new SizeInt32(windowWidth, windowHeight));
-        
+
         // Set window icon
         var iconPath = System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "icon.ico");
         if (System.IO.File.Exists(iconPath))
@@ -187,20 +190,34 @@ public sealed partial class MainWindow : Window
                 UpdateProfileButtonStyles();
             };
 
-            // Use ContextFlyout for right-click menu
-            var flyout = new MenuFlyout();
-            flyout.MenuFlyoutPresenterStyle = (Style)Application.Current.Resources["DarkMenuFlyoutStyle"];
-
-            var renameItem = new MenuFlyoutItem { Text = "Yeniden Adlandır" };
-            renameItem.Style = (Style)Application.Current.Resources["DarkMenuFlyoutItemStyle"];
-            renameItem.Click += (s, e) => ShowProfileRenameDialog(index);
-            
-            flyout.Items.Add(renameItem);
-            btn.ContextFlyout = flyout;
+            // Use a lazily created flyout: building six MenuFlyouts (with styles)
+            // during startup costs more than the rest of the window construction.
+            btn.RightTapped += ProfileButton_RightTapped;
 
             _profileButtons[i] = btn;
             ProfileButtons.Items.Add(btn);
         }
+    }
+
+    private void ProfileButton_RightTapped(object sender, RightTappedRoutedEventArgs e)
+    {
+        if (sender is not Button button || button.Tag is not int index) return;
+
+        var flyout = new MenuFlyout
+        {
+            MenuFlyoutPresenterStyle = (Style)Application.Current.Resources["DarkMenuFlyoutStyle"]
+        };
+
+        var renameItem = new MenuFlyoutItem
+        {
+            Text = "Yeniden Adlandır",
+            Style = (Style)Application.Current.Resources["DarkMenuFlyoutItemStyle"]
+        };
+        renameItem.Click += (_, _) => ShowProfileRenameDialog(index);
+        flyout.Items.Add(renameItem);
+
+        flyout.ShowAt(button, new FlyoutShowOptions { Position = e.GetPosition(button) });
+        e.Handled = true;
     }
 
     private void UpdateProfileButtonStyles()
@@ -320,29 +337,8 @@ public sealed partial class MainWindow : Window
 
     private void CloseButton_Click(object sender, RoutedEventArgs e)
     {
-        // Hide to tray instead of closing
-        this.Hide();
+        // There is no tray icon, so "close" must really exit the app.
+        // Shutdown unhooks the global hooks before the process goes away.
+        App.Shutdown();
     }
-
-    public void Hide()
-    {
-        var hWnd = WindowNative.GetWindowHandle(this);
-        ShowWindow(hWnd, SW_HIDE);
-    }
-
-    public void Show()
-    {
-        var hWnd = WindowNative.GetWindowHandle(this);
-        ShowWindow(hWnd, SW_SHOW);
-        SetForegroundWindow(hWnd);
-    }
-
-    [DllImport("user32.dll")]
-    private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
-
-    [DllImport("user32.dll")]
-    private static extern bool SetForegroundWindow(IntPtr hWnd);
-
-    private const int SW_HIDE = 0;
-    private const int SW_SHOW = 5;
 }

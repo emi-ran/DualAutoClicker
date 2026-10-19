@@ -75,8 +75,14 @@
 
 ## Architectural notes
 - `ClickerService` owns global input hooks and master state.
+- `KeyboardMacroService` generates macro text and injects it from its own worker thread. Never call `SendInput` from a low-level hook callback: it blocks the UI thread and the whole system input queue.
+- Hook callbacks must stay fast and must ignore injected events (`LLKHF_INJECTED` / `LLMHF_INJECTED`).
+- Shutdown goes through `App.Shutdown()`. It must unhook before the process tears down, otherwise the whole system hangs on the dead hook. The close button exits the app (there is no tray icon).
 - `SettingsPanel` updates UI based on `SettingsService` and `ClickerService` state.
 - `WindowPickerDialog` is a dynamic dialog (no XAML file).
+- Single instance is enforced with a named mutex (`Local\DualAutoClicker.SingleInstance`) in `App.OnLaunched`. The WinRT `AppInstance` path was removed because it cost ~30 ms of startup.
+- Profile button context menus are created on right-click (`RightTapped`) instead of during startup; building six `MenuFlyout`s up front was one of the most expensive parts of window construction.
+- `KeyboardMacroService` starts its injection worker on first macro use, not in the constructor.
 
 ## Common pitfalls
 - When using `build_installer.py`, it overwrites `installer.iss`.

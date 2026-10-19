@@ -14,8 +14,17 @@ public class PrecisionClicker : IDisposable
     [DllImport("winmm.dll")]
     private static extern uint timeEndPeriod(uint uPeriod);
 
+    /// <summary>
+    /// Per-run stop flag. A dedicated token lets a new run start immediately while the
+    /// previous thread is still finishing its last click (no shared flag race).
+    /// </summary>
+    private sealed class RunToken
+    {
+        public volatile bool Running = true;
+    }
+
+    private RunToken? _runToken;
     private Thread? _thread;
-    private volatile bool _running;
     private volatile int _baseCps;
     private volatile int _randomPercent;
     private readonly Action _clickAction;
@@ -48,33 +57,60 @@ public class PrecisionClicker : IDisposable
 
     public void Start(int cps, int randomPercent = 0)
     {
-        if (_running) return;
+        if (_runToken is { Running: true }) return;
 
         _baseCps = cps;
         _randomPercent = randomPercent;
-        _running = true;
 
-        _thread = new Thread(ClickLoop)
+        var token = new RunToken();
+        _runToken = token;
+
+        // AboveNormal keeps the UI thread responsive; Highest could starve the
+        // rest of the system while spin-waiting.
+        _thread = new Thread(() => ClickLoop(token))
         {
             IsBackground = true,
-            Priority = ThreadPriority.Highest
+            Name = "PrecisionClicker",
+            Priority = ThreadPriority.AboveNormal
         };
         _thread.Start();
     }
 
+    /// <summary>
+    /// Stops clicking without blocking. This is called from the low-level hook callback,
+    /// so joining the worker thread here would freeze input for the whole system.
+    /// </summary>
     public void Stop()
     {
-        _running = false;
-        _thread?.Join(100);
+        RunToken? token = Interlocked.Exchange(ref _runToken, null);
+        if (token == null) return;
+
+        token.Running = false;
+    }
+
+    /// <summary>
+    /// Stops clicking and waits for the worker thread to finish. Only for shutdown paths,
+    /// never for the hook callback.
+    /// </summary>
+    public void StopAndWait(int timeoutMs)
+    {
+        Stop();
+
+        Thread? thread = _thread;
+        if (thread != null && thread.IsAlive)
+        {
+            thread.Join(timeoutMs);
+        }
+
         _thread = null;
     }
 
-    private void ClickLoop()
+    private void ClickLoop(RunToken token)
     {
         var stopwatch = Stopwatch.StartNew();
         long nextClickTime = 0;
 
-        while (_running)
+        while (token.Running)
         {
             long elapsed = stopwatch.ElapsedTicks;
             long elapsedMicroseconds = elapsed * 1_000_000 / Stopwatch.Frequency;
@@ -103,11 +139,13 @@ public class PrecisionClicker : IDisposable
             }
             else
             {
-                // Short sleep to reduce CPU usage, then spin-wait for precision
+                // Sleep for most of the remaining interval, then spin only for the
+                // last couple of milliseconds. Sleeping 1 ms at a time woke the CPU
+                // hundreds of times per second for no timing benefit.
                 long remainingMs = (nextClickTime - elapsedMicroseconds) / 1000;
                 if (remainingMs > 2)
                 {
-                    Thread.Sleep(1);
+                    Thread.Sleep((int)(remainingMs - 2));
                 }
                 else
                 {
@@ -120,7 +158,8 @@ public class PrecisionClicker : IDisposable
     public void Dispose()
     {
         if (_disposed) return;
-        Stop();
+        // Wait for the worker so no click is injected while the app is going away.
+        StopAndWait(500);
         _disposed = true;
         GC.SuppressFinalize(this);
     }
