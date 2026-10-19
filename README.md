@@ -5,7 +5,7 @@ Bağımsız sol ve sağ tık ayarlarına sahip, 6 profil destekli, yüksek perfo
 ![Platform](https://img.shields.io/badge/Platform-Windows-blue)
 ![.NET](https://img.shields.io/badge/.NET-8.0-purple)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Version](https://img.shields.io/badge/Version-3.2.3-orange)
+![Version](https://img.shields.io/badge/Version-3.2.4-orange)
 
 ## ✨ Özellikler
 
@@ -30,7 +30,7 @@ Bağımsız sol ve sağ tık ayarlarına sahip, 6 profil destekli, yüksek perfo
 
 ### Hızlı Başlat
 
-1. [Releases](../../releases) sayfasından `DualAutoClicker-Setup.exe` dosyasını indirin.
+1. [Releases](../../releases) sayfasından `DualAutoClicker-setup.exe` dosyasını indirin.
 2. Kurulumu başlatın ve isteğe bağlı masaüstü kısayolu seçin.
 3. Kurulumdan sonra uygulamayı başlatın.
 
@@ -77,7 +77,7 @@ gh secret set SIGNING_PFX_PASSWORD --repo emi-ran/DualAutoClicker
 
 İkinci komut parolayı gizli olarak sorar. Parolayı komuta, kaynak koduna veya `.env` dosyasına yazmak gerekmez. PFX Base64 değeri GitHub'ın secret başına 48 KB sınırına sığmalıdır. `INSTALLER_APP_ID` bir kez oluşturulur; eski bir installer serisini devam ettiriyorsanız onun `AppId` GUID'ini kullanın. Rastgele GUID'i her release'te değiştirmeyin. CI kurulumu için oluşturulan GUID, eski yerel installer'ların rastgele kimlikleriyle kendiliğinden eşleşmez.
 
-Sürüm çıkarırken `.csproj` içindeki `Version`, README sürümü ve CHANGELOG güncellenmeli; tag örneğin `v3.2.4`, proje sürümü `3.2.4` olmalıdır. Ön sürümler için `v3.2.4-rc.1` ve `3.2.4-rc.1` de desteklenir. Tag ile proje sürümü uyuşmazsa akış durur. Workflow'u içeren commit yeni release tag'inde bulunmalıdır.
+Sürüm çıkarırken `.csproj` içindeki `Version`, README sürümü ve CHANGELOG güncellenmeli; tag örneğin `v3.2.5`, proje sürümü `3.2.5` olmalıdır. Ön sürümler için `v3.2.5-rc.1` ve `3.2.5-rc.1` de desteklenir. Tag ile proje sürümü uyuşmazsa akış durur. Workflow'u içeren commit yeni release tag'inde bulunmalıdır.
 
 CI, sertifikayı runner'ın geçici klasöründe kullanır ve iş bitiminde siler. Eksik secret, imzalama veya imza/zaman damgası kontrolü hatasında installer yüklenmez. Self-signed sertifikalarla `NotTrusted` durumu kabul edilir; bu, Windows/SmartScreen güveni sağlandığı anlamına gelmez. Runner'a güvenilen kök sertifika yüklenmez. Yerel imzalamada da parola `SIGNING_PFX_PASSWORD` ortam değişkeninden okunabilir; mevcut `--cert-pass` seçeneği desteklenmeye devam eder.
 

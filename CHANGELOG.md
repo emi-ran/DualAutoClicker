@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [3.2.4] - 2026-10-19
+
 ### Klavye Makrosu
 - Master kontrol kapatıldığında çalışan makro iptal edilir; bekleyen işler de kuyruktan temizlenir. İptal, metin parçaları arasındaki beklemeyi de keser.
 - Mouse makro tuşunun bırakılması artık modifier durumundan bağımsız debounce'u sıfırlar.
